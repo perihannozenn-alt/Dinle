@@ -157,7 +157,11 @@ app.post('/extract-pdf-text', requireUser, async (req, res) => {
       return res.status(502).json({ error: 'PDF okuma servisi beklenmeyen bir yanıt verdi. Lütfen daha küçük bir PDF deneyin.' });
     }
     if (!response.ok || data.error) {
-      return res.status(502).json({ error: data.error?.message || 'PDF metni çıkarılamadı.' });
+      const message = data.error?.message || '';
+      if (message.toLowerCase().includes('invalid x-api-key')) {
+        return res.status(502).json({ error: 'Claude API anahtarı geçersiz. Render ortamındaki ANTHROPIC_API_KEY değerini kontrol et.' });
+      }
+      return res.status(502).json({ error: message || 'PDF metni çıkarılamadı.' });
     }
 
     res.json({ text: data.content?.[0]?.text || '' });
@@ -193,7 +197,11 @@ app.post('/summarize', requireUser, async (req, res) => {
 
     const data = await response.json();
     if (!response.ok || data.error) {
-      return res.status(502).json({ error: data.error?.message || 'Özet oluşturulamadı.' });
+      const message = data.error?.message || '';
+      if (message.toLowerCase().includes('invalid x-api-key')) {
+        return res.status(502).json({ error: 'Claude API anahtarı geçersiz. Render ortamındaki ANTHROPIC_API_KEY değerini kontrol et.' });
+      }
+      return res.status(502).json({ error: message || 'Özet oluşturulamadı.' });
     }
 
     res.json({ summary: data.content?.[0]?.text || '' });
