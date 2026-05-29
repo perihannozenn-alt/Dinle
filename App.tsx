@@ -26,6 +26,7 @@ const db = getFirestore(firebaseApp);
 
 const API_BASE_URL = 'https://dinle-api.onrender.com';
 const LOGO = require('./assets/dinle-logo.jpeg');
+const OPENING_SOUND = require('./assets/dinle-opening.wav');
 
 const C = {
   bg: '#0F0E17', surface: '#1A1826', elevated: '#231F35',
@@ -190,28 +191,41 @@ function RegisterForm({ form, onChange, onBack, onSubmit }: RegProps) {
 
 function PremiumSplash() {
   const logoOpacity = useRef(new Animated.Value(0)).current;
-  const logoScale = useRef(new Animated.Value(0.9)).current;
+  const logoScale = useRef(new Animated.Value(0.72)).current;
   const titleOpacity = useRef(new Animated.Value(0)).current;
   const titleY = useRef(new Animated.Value(12)).current;
   const wave = useRef(new Animated.Value(0)).current;
   const breathe = useRef(new Animated.Value(0)).current;
+  const reveal = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    let soundRef: any;
+    const ExpoAV = require('expo-av');
+    ExpoAV.Audio.Sound.createAsync(OPENING_SOUND, { shouldPlay: true, volume: 0.36 })
+      .then(({ sound }: any) => { soundRef = sound; })
+      .catch(() => {});
+
     Animated.parallel([
       Animated.timing(logoOpacity, {
         toValue: 1,
-        duration: 900,
+        duration: 1100,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
       Animated.timing(logoScale, {
         toValue: 1,
-        duration: 1200,
+        duration: 1600,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(reveal, {
+        toValue: 1,
+        duration: 1350,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
       Animated.sequence([
-        Animated.delay(1300),
+        Animated.delay(1550),
         Animated.parallel([
           Animated.timing(titleOpacity, {
             toValue: 1,
@@ -254,24 +268,30 @@ function PremiumSplash() {
         }),
       ])
     ).start();
-  }, [breathe, logoOpacity, logoScale, titleOpacity, titleY, wave]);
 
-  const waveMove = wave.interpolate({ inputRange: [0, 1], outputRange: [-28, 28] });
-  const waveFade = wave.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.35, 0.75, 0.35] });
-  const breathScale = breathe.interpolate({ inputRange: [0, 1], outputRange: [1, 1.035] });
+    return () => {
+      if (soundRef) soundRef.unloadAsync().catch(() => {});
+    };
+  }, [breathe, logoOpacity, logoScale, reveal, titleOpacity, titleY, wave]);
+
+  const waveMove = wave.interpolate({ inputRange: [0, 1], outputRange: [-90, 90] });
+  const waveFade = wave.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.22, 0.88, 0.22] });
+  const breathScale = breathe.interpolate({ inputRange: [0, 1], outputRange: [1, 1.045] });
+  const revealY = reveal.interpolate({ inputRange: [0, 1], outputRange: [26, 0] });
+  const revealRotate = reveal.interpolate({ inputRange: [0, 1], outputRange: ['-4deg', '0deg'] });
 
   return (
     <SafeAreaProvider>
       <SafeAreaView style={s.splashRoot}>
         <View style={s.splashBackdrop}>
-          {[0, 1, 2].map(row => (
+          {[0, 1, 2, 3, 4].map(row => (
             <Animated.View
               key={row}
               style={[
                 s.waveRow,
                 {
                   opacity: waveFade,
-                  top: 255 + row * 20,
+                  top: 230 + row * 22,
                   transform: [
                     { translateX: waveMove },
                     { scaleY: row === 1 ? breathScale : 1 },
@@ -279,14 +299,14 @@ function PremiumSplash() {
                 },
               ]}
             >
-              {Array.from({ length: 23 }).map((_, i) => (
+              {Array.from({ length: 32 }).map((_, i) => (
                 <View
                   key={i}
                   style={[
                     s.waveDot,
                     {
-                      opacity: 0.18 + ((i + row) % 6) * 0.1,
-                      transform: [{ translateY: Math.sin((i + row) / 2) * 18 }],
+                      opacity: 0.12 + ((i + row) % 8) * 0.09,
+                      transform: [{ translateY: Math.sin((i + row) / 2.2) * 26 }],
                     },
                   ]}
                 />
@@ -299,7 +319,11 @@ function PremiumSplash() {
               s.splashLogoWrap,
               {
                 opacity: logoOpacity,
-                transform: [{ scale: Animated.multiply(logoScale, breathScale) }],
+                transform: [
+                  { translateY: revealY },
+                  { rotate: revealRotate },
+                  { scale: Animated.multiply(logoScale, breathScale) },
+                ],
               },
             ]}
           >
@@ -344,7 +368,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => setSplashDone(true), 2800);
+    const timer = setTimeout(() => setSplashDone(true), 3600);
     return () => clearTimeout(timer);
   }, []);
   const [pageCount, setPageCount] = useState(0);
@@ -956,32 +980,32 @@ const s = StyleSheet.create({
   splashRoot: { flex: 1, backgroundColor: '#080512' },
   splashBackdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   splashLogoWrap: {
-    width: 178,
-    height: 178,
-    borderRadius: 42,
+    width: 196,
+    height: 196,
+    borderRadius: 46,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: C.primary,
     shadowOpacity: 0.35,
-    shadowRadius: 28,
+    shadowRadius: 34,
     shadowOffset: { width: 0, height: 12 },
     elevation: 12,
   },
-  splashLogo: { width: 166, height: 166, borderRadius: 38 },
+  splashLogo: { width: 184, height: 184, borderRadius: 42 },
   splashTitle: { fontFamily: 'Georgia', fontSize: 38, color: C.text, fontWeight: '700', marginTop: 28 },
   splashSubtitle: { color: C.textSub, fontSize: 14, marginTop: 8, letterSpacing: 0 },
   waveRow: {
     position: 'absolute',
     left: -40,
     right: -40,
-    height: 24,
+    height: 34,
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 8,
+    gap: 9,
   },
   waveDot: {
-    width: 5,
-    height: 5,
+    width: 6,
+    height: 6,
     borderRadius: 3,
     backgroundColor: C.primary,
   },
