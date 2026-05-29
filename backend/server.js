@@ -15,9 +15,30 @@ const allowedVoiceIds = new Set([
   'AaAZgk1FPmHlBtpLjEGc',
 ]);
 
-if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+function parseServiceAccount() {
+  const rawValue = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (!rawValue) return null;
+
+  let value = rawValue.trim();
+  if (!value.startsWith('{') && value.includes('"type"')) {
+    value = `{${value}`;
+  }
+  if (!value.endsWith('}') && value.includes('"private_key"')) {
+    value = `${value}}`;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON tam JSON olmalı: ilk karakter { ve son karakter } olmalı.');
+  }
+}
+
+const serviceAccount = parseServiceAccount();
+
+if (serviceAccount) {
   admin.initializeApp({
-    credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)),
+    credential: admin.credential.cert(serviceAccount),
   });
 } else {
   admin.initializeApp();
