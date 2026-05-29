@@ -8,11 +8,9 @@ const anthropicKey = process.env.ANTHROPIC_API_KEY;
 const elevenLabsKey = process.env.ELEVENLABS_API_KEY;
 
 const allowedVoiceIds = new Set([
-  'D2zohYOTDLDjsukaJR6s',
-  'lTLroDFA8XupnqzYQ65E',
-  'UJyFYuT2bWhbOJWQAbbr',
-  'CqeDG8Vtg5Q5UccDJKM5',
-  'AaAZgk1FPmHlBtpLjEGc',
+  '5k0SUQMAw9FAMiMpVAnK',
+  'jn9r0BbscFxzXTZWvqPO',
+  'bxi3fRnQ9ub4TxPfgkcM',
 ]);
 
 function parseServiceAccount() {

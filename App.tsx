@@ -35,11 +35,9 @@ const C = {
 };
 
 const TONES = [
-  { id: 'child_f', name: 'Sefkatli Kadin', emoji: '🌸', color: '#F4A56A', desc: 'Çocuk kitapları için', voiceId: 'D2zohYOTDLDjsukaJR6s', stability: 0.75, style: 0.2 },
-  { id: 'child_m', name: 'Sefkatli Erkek', emoji: '🌼', color: '#F4C46A', desc: 'Çocuk kitapları için', voiceId: 'lTLroDFA8XupnqzYQ65E', stability: 0.75, style: 0.2 },
-  { id: 'serious', name: 'Ciddi Erkek',    emoji: '🎓', color: '#8EF46A', desc: 'Akademik içerikler',   voiceId: 'UJyFYuT2bWhbOJWQAbbr', stability: 0.85, style: 0.0 },
-  { id: 'tale_f',  name: 'Masalsi Kadin',  emoji: '✨', color: '#D46AF4', desc: 'Peri masalları',       voiceId: 'CqeDG8Vtg5Q5UccDJKM5', stability: 0.65, style: 0.4 },
-  { id: 'tale_m',  name: 'Masalsi Erkek',  emoji: '🧙', color: '#6AB4F4', desc: 'Macera hikayeleri',    voiceId: 'AaAZgk1FPmHlBtpLjEGc', stability: 0.65, style: 0.4 },
+  { id: 'soft_f', name: 'Soft Kadin', emoji: '🌙', color: '#D8B4FE', desc: 'Roman ve gece dinleme', voiceId: '5k0SUQMAw9FAMiMpVAnK', stability: 0.78, style: 0.25 },
+  { id: 'academic_m', name: 'Akademik Erkek', emoji: '🎓', color: '#8EF46A', desc: 'PDF ve akademik metinler', voiceId: 'jn9r0BbscFxzXTZWvqPO', stability: 0.86, style: 0.05 },
+  { id: 'tale_f', name: 'Masalsi Kadin', emoji: '✨', color: '#C9A96E', desc: 'Masal ve hikaye anlatımı', voiceId: 'bxi3fRnQ9ub4TxPfgkcM', stability: 0.68, style: 0.45 },
 ];
 
 const SLEEP = [
