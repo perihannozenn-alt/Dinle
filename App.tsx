@@ -8,7 +8,7 @@ import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -48,6 +48,8 @@ const SLEEP = [
   { id: 'med1',  title: 'Gece Meditasyonu',   emoji: '🌙', duration: '20 dk',  yt: 'uhVPfW-P4ks' },
 ];
 
+const ytThumb = (id: string) => `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+
 // Keşfet sayfası kitapları
 const DISCOVER_BOOKS = [
   {
@@ -61,6 +63,7 @@ const DISCOVER_BOOKS = [
     store: 'Kitapyurdu',
     url: 'https://www.kitapyurdu.com',
     desc: 'Rus edebiyatının başyapıtı',
+    imageUrl: 'https://covers.openlibrary.org/b/id/8231856-L.jpg',
   },
   {
     id: 'd2',
@@ -73,6 +76,7 @@ const DISCOVER_BOOKS = [
     store: 'D&R',
     url: 'https://www.dr.com.tr',
     desc: 'Tüm zamanların en çok okunan kitabı',
+    imageUrl: 'https://covers.openlibrary.org/b/id/7892359-L.jpg',
   },
   {
     id: 'd3',
@@ -85,6 +89,7 @@ const DISCOVER_BOOKS = [
     store: 'İdefix',
     url: 'https://www.idefix.com',
     desc: 'İnsanlığın kısa tarihi',
+    imageUrl: 'https://covers.openlibrary.org/b/id/8370221-L.jpg',
   },
   {
     id: 'd4',
@@ -97,6 +102,7 @@ const DISCOVER_BOOKS = [
     store: 'Bkmkitap',
     url: 'https://www.bkmkitap.com',
     desc: 'Tüm zamanların en iyi bilim kurgu romanı',
+    imageUrl: 'https://covers.openlibrary.org/b/id/9329962-L.jpg',
   },
   {
     id: 'd5',
@@ -109,6 +115,7 @@ const DISCOVER_BOOKS = [
     store: 'Kitapyurdu',
     url: 'https://www.kitapyurdu.com',
     desc: 'Küçük değişiklikler büyük sonuçlar doğurur',
+    imageUrl: 'https://covers.openlibrary.org/b/isbn/9780735211292-L.jpg',
   },
   {
     id: 'd6',
@@ -121,6 +128,7 @@ const DISCOVER_BOOKS = [
     store: 'D&R',
     url: 'https://www.dr.com.tr',
     desc: 'Efsanevi dedektifin maceraları',
+    imageUrl: 'https://covers.openlibrary.org/b/id/8318158-L.jpg',
   },
 ];
 
@@ -457,6 +465,19 @@ export default function App() {
     }
   }
 
+  async function handleForgotPassword() {
+    if (!loginForm.email) {
+      Alert.alert('E-posta Gerekli', 'Şifre sıfırlama bağlantısı için e-posta adresinizi yazın.');
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, loginForm.email);
+      Alert.alert('E-posta Gönderildi', 'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi.');
+    } catch (err: any) {
+      Alert.alert('Şifre Sıfırlama Hatası', err.message || 'E-posta gönderilemedi.');
+    }
+  }
+
   async function handleLogout() {
     await signOut(auth);
     setScreen('auth');
@@ -660,6 +681,10 @@ export default function App() {
               value={loginForm.password} onChangeText={v => setLoginForm(prev => ({ ...prev, password: v }))}
             />
 
+            <TouchableOpacity style={{ alignSelf: 'flex-end', marginTop: -12, marginBottom: 8 }} onPress={handleForgotPassword}>
+              <Text style={{ color: C.primary, fontSize: 13, fontWeight: '600' }}>Şifremi unuttum</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity style={s.btn} onPress={handleLogin}>
               <Text style={s.btnText}>Giriş Yap</Text>
             </TouchableOpacity>
@@ -854,9 +879,7 @@ export default function App() {
             style={[s.bookCard, { borderLeftColor: book.color }]}
             onPress={() => Linking.openURL(book.url)}
           >
-            <View style={[s.bookCover, { backgroundColor: book.color + '22' }]}>
-              <Text style={{ fontSize: 28 }}>{book.emoji}</Text>
-            </View>
+            <Image source={{ uri: book.imageUrl }} style={s.discoverCover} />
             <View style={{ flex: 1 }}>
               <Text style={s.bookTitle}>{book.title}</Text>
               <Text style={{ fontSize: 12, color: C.textSub, marginBottom: 2 }}>{book.author}</Text>
@@ -889,12 +912,14 @@ export default function App() {
       </View>
       {SLEEP.map(item => (
         <TouchableOpacity key={item.id} style={[s.sleepCard, activeSleep?.id === item.id && { borderColor: C.accent }]} onPress={() => { setActiveSleep(item); setShowYT(true); }}>
-          <Text style={{ fontSize: 32 }}>{item.emoji}</Text>
-          <View style={{ flex: 1, marginLeft: 14 }}>
-            <Text style={s.bookTitle}>{item.title}</Text>
-            <Text style={s.bookMeta}>{item.duration}</Text>
+          <Image source={{ uri: ytThumb(item.yt) }} style={s.sleepThumb} />
+          <View style={s.sleepShade}>
+            <View style={{ flex: 1 }}>
+              <Text style={[s.bookTitle, { fontSize: 16 }]}>{item.title}</Text>
+              <Text style={[s.bookMeta, { color: C.textSub }]}>{item.duration}</Text>
+            </View>
+            <View style={s.sleepPlay}><Text style={{ color: C.bg, fontSize: 16 }}>▶</Text></View>
           </View>
-          <Text style={{ fontSize: 22 }}>▶</Text>
         </TouchableOpacity>
       ))}
     </ScrollView>
@@ -924,7 +949,7 @@ export default function App() {
     <Modal visible={showYT && !!activeSleep} transparent animationType="fade">
       <View style={s.overlay}>
         <View style={[s.sheet, { alignItems: 'center' }]}>
-          <Text style={{ fontSize: 48, marginBottom: 8 }}>{activeSleep?.emoji}</Text>
+          {!!activeSleep && <Image source={{ uri: ytThumb(activeSleep.yt) }} style={s.ytPreview} />}
           <Text style={s.sheetTitle}>{activeSleep?.title}</Text>
           <Text style={s.bookMeta}>{activeSleep?.duration}</Text>
           <TouchableOpacity style={[s.btn, { backgroundColor: '#FF0000', marginTop: 20 }]} onPress={() => Linking.openURL('https://www.youtube.com/watch?v=' + (activeSleep ? activeSleep.yt : ''))}>
@@ -1027,6 +1052,7 @@ const s = StyleSheet.create({
   logoMarkSmall: { width: 86, height: 86, borderRadius: 22 },
   bookCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: C.surface, borderRadius: 14, padding: 14, marginBottom: 10, borderLeftWidth: 4 },
   bookCover: { width: 52, height: 52, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  discoverCover: { width: 58, height: 82, borderRadius: 8, backgroundColor: C.elevated },
   bookTitle: { fontFamily: 'Georgia', fontSize: 15, color: C.text, fontWeight: '600', marginBottom: 3 },
   bookMeta: { fontSize: 12, color: C.textMuted, marginBottom: 6 },
   progressBar: { height: 3, backgroundColor: C.border, borderRadius: 2, overflow: 'hidden' },
@@ -1035,7 +1061,11 @@ const s = StyleSheet.create({
   badge: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
   pageText: { fontFamily: 'Georgia', fontSize: 18, color: C.text, lineHeight: 32, letterSpacing: 0.3 },
   playBtn: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
-  sleepCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.surface, borderRadius: 14, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: C.border },
+  sleepCard: { height: 132, borderRadius: 14, marginBottom: 12, borderWidth: 1, borderColor: C.border, overflow: 'hidden', backgroundColor: C.surface },
+  sleepThumb: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
+  sleepShade: { flex: 1, flexDirection: 'row', alignItems: 'flex-end', padding: 14, backgroundColor: '#00000066' },
+  sleepPlay: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: C.primary },
+  ytPreview: { width: '100%', height: 170, borderRadius: 12, marginBottom: 16, backgroundColor: C.surface },
   tabBar: { flexDirection: 'row', backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.border, paddingBottom: 8, paddingTop: 8 },
   tabItem: { flex: 1, alignItems: 'center', gap: 3 },
   tabLabel: { fontSize: 11, color: C.textMuted },
