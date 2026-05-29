@@ -483,17 +483,28 @@ export default function App() {
   async function apiPost(path: string, body: any) {
     const token = await auth.currentUser?.getIdToken();
     if (!token) throw new Error('Lütfen tekrar giriş yapın.');
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(body),
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'İşlem tamamlanamadı.');
-    return data;
+    try {
+      const response = await fetch(`${API_BASE_URL}${path}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+      const raw = await response.text();
+      let data: any = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        throw new Error('Sunucu geçici olarak beklenmeyen bir yanıt verdi. Lütfen birazdan tekrar deneyin.');
+      }
+      if (!response.ok) throw new Error(data.error || 'İşlem tamamlanamadı.');
+      return data;
+    } catch (err: any) {
+      if (err.message) throw err;
+      throw new Error('Bağlantı kurulamadı. İnternet bağlantını kontrol edip tekrar dene.');
+    }
   }
 
   async function extractTextFromPDF(pdfBase64: string): Promise<string> {
@@ -560,6 +571,10 @@ export default function App() {
       const result = await DocumentPicker.getDocumentAsync({ type: 'application/pdf', copyToCacheDirectory: true });
       if (result.canceled) return;
       const asset = result.assets[0];
+      if (asset.size && asset.size > 10 * 1024 * 1024) {
+        Alert.alert('PDF Çok Büyük', 'Şimdilik 10 MB altındaki PDF dosyalarını yükleyebilirsin.');
+        return;
+      }
 
       const base64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: 'base64' as any });
 

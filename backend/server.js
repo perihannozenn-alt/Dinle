@@ -45,7 +45,7 @@ if (serviceAccount) {
 }
 
 app.use(cors());
-app.use(express.json({ limit: '12mb' }));
+app.use(express.json({ limit: '25mb' }));
 
 async function requireUser(req, res, next) {
   try {
@@ -125,8 +125,8 @@ app.post('/extract-pdf-text', requireUser, async (req, res) => {
     if (typeof pdfBase64 !== 'string' || pdfBase64.length < 100) {
       return res.status(400).json({ error: 'PDF içeriği alınamadı.' });
     }
-    if (pdfBase64.length > 8_000_000) {
-      return res.status(400).json({ error: 'PDF şimdilik çok büyük. Daha küçük bir dosya deneyin.' });
+    if (pdfBase64.length > 18_000_000) {
+      return res.status(400).json({ error: 'PDF şimdilik çok büyük. 10 MB altı bir dosya deneyin.' });
     }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -149,7 +149,13 @@ app.post('/extract-pdf-text', requireUser, async (req, res) => {
       }),
     });
 
-    const data = await response.json();
+    const raw = await response.text();
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      return res.status(502).json({ error: 'PDF okuma servisi beklenmeyen bir yanıt verdi. Lütfen daha küçük bir PDF deneyin.' });
+    }
     if (!response.ok || data.error) {
       return res.status(502).json({ error: data.error?.message || 'PDF metni çıkarılamadı.' });
     }
