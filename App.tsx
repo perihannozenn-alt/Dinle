@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   Alert, Dimensions, Modal, ActivityIndicator, Linking,
-  TextInput, KeyboardAvoidingView, Platform, Image,
+  TextInput, KeyboardAvoidingView, Platform, Image, Animated, Easing,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
@@ -188,6 +188,134 @@ function RegisterForm({ form, onChange, onBack, onSubmit }: RegProps) {
   );
 }
 
+function PremiumSplash() {
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const logoScale = useRef(new Animated.Value(0.9)).current;
+  const titleOpacity = useRef(new Animated.Value(0)).current;
+  const titleY = useRef(new Animated.Value(12)).current;
+  const wave = useRef(new Animated.Value(0)).current;
+  const breathe = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(logoOpacity, {
+        toValue: 1,
+        duration: 900,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(logoScale, {
+        toValue: 1,
+        duration: 1200,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.sequence([
+        Animated.delay(1300),
+        Animated.parallel([
+          Animated.timing(titleOpacity, {
+            toValue: 1,
+            duration: 800,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(titleY, {
+            toValue: 0,
+            duration: 800,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+        ]),
+      ]),
+    ]).start();
+
+    Animated.loop(
+      Animated.timing(wave, {
+        toValue: 1,
+        duration: 3200,
+        easing: Easing.inOut(Easing.sin),
+        useNativeDriver: true,
+      })
+    ).start();
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(breathe, {
+          toValue: 1,
+          duration: 1800,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(breathe, {
+          toValue: 0,
+          duration: 1800,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [breathe, logoOpacity, logoScale, titleOpacity, titleY, wave]);
+
+  const waveMove = wave.interpolate({ inputRange: [0, 1], outputRange: [-28, 28] });
+  const waveFade = wave.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.35, 0.75, 0.35] });
+  const breathScale = breathe.interpolate({ inputRange: [0, 1], outputRange: [1, 1.035] });
+
+  return (
+    <SafeAreaProvider>
+      <SafeAreaView style={s.splashRoot}>
+        <View style={s.splashBackdrop}>
+          {[0, 1, 2].map(row => (
+            <Animated.View
+              key={row}
+              style={[
+                s.waveRow,
+                {
+                  opacity: waveFade,
+                  top: 255 + row * 20,
+                  transform: [
+                    { translateX: waveMove },
+                    { scaleY: row === 1 ? breathScale : 1 },
+                  ],
+                },
+              ]}
+            >
+              {Array.from({ length: 23 }).map((_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    s.waveDot,
+                    {
+                      opacity: 0.18 + ((i + row) % 6) * 0.1,
+                      transform: [{ translateY: Math.sin((i + row) / 2) * 18 }],
+                    },
+                  ]}
+                />
+              ))}
+            </Animated.View>
+          ))}
+
+          <Animated.View
+            style={[
+              s.splashLogoWrap,
+              {
+                opacity: logoOpacity,
+                transform: [{ scale: Animated.multiply(logoScale, breathScale) }],
+              },
+            ]}
+          >
+            <Image source={LOGO} style={s.splashLogo} />
+          </Animated.View>
+
+          <Animated.View style={{ opacity: titleOpacity, transform: [{ translateY: titleY }], alignItems: 'center' }}>
+            <Text style={s.splashTitle}>Dinle</Text>
+            <Text style={s.splashSubtitle}>Yapay zekâ destekli ses deneyimi</Text>
+          </Animated.View>
+        </View>
+      </SafeAreaView>
+    </SafeAreaProvider>
+  );
+}
+
 export default function App() {
   const [screen, setScreen] = useState<'auth' | 'register' | 'plan' | 'login' | 'app'>('auth');
   const [tab, setTab] = useState('library');
@@ -195,6 +323,7 @@ export default function App() {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [plan, setPlan] = useState<'free' | 'temel' | 'premium'>('free');
   const [authLoading, setAuthLoading] = useState(true);
+  const [splashDone, setSplashDone] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -212,6 +341,11 @@ export default function App() {
       setAuthLoading(false);
     });
     return unsub;
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSplashDone(true), 2800);
+    return () => clearTimeout(timer);
   }, []);
   const [pageCount, setPageCount] = useState(0);
   const [books, setBooks] = useState(DEMO_BOOKS);
@@ -439,14 +573,7 @@ export default function App() {
   function isBookmarked(bookId: string, pageIdx: number) { return bookmarks.includes(bookId + '-' + pageIdx); }
   function openBook(book: any) { setActiveBook(book); setCurrentPage(0); setTab('reader'); stopAudio(); }
 
-  if (authLoading) return (
-    <SafeAreaProvider>
-      <SafeAreaView style={[s.root, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Image source={LOGO} style={s.logoMarkSmall} />
-        <ActivityIndicator color={C.primary} size="large" style={{ marginTop: 20 }} />
-      </SafeAreaView>
-    </SafeAreaProvider>
-  );
+  if (authLoading || !splashDone) return <PremiumSplash />;
 
   if (screen === 'auth') return (
     <SafeAreaProvider>
@@ -826,6 +953,38 @@ export default function App() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
+  splashRoot: { flex: 1, backgroundColor: '#080512' },
+  splashBackdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  splashLogoWrap: {
+    width: 178,
+    height: 178,
+    borderRadius: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: C.primary,
+    shadowOpacity: 0.35,
+    shadowRadius: 28,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 12,
+  },
+  splashLogo: { width: 166, height: 166, borderRadius: 38 },
+  splashTitle: { fontFamily: 'Georgia', fontSize: 38, color: C.text, fontWeight: '700', marginTop: 28 },
+  splashSubtitle: { color: C.textSub, fontSize: 14, marginTop: 8, letterSpacing: 0 },
+  waveRow: {
+    position: 'absolute',
+    left: -40,
+    right: -40,
+    height: 24,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  waveDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: C.primary,
+  },
   listContent: { padding: 16, paddingBottom: 32 },
   logoMark: { width: 142, height: 142, borderRadius: 32 },
   logoMarkSmall: { width: 86, height: 86, borderRadius: 22 },
