@@ -108,7 +108,17 @@ app.post('/text-to-speech', requireUser, async (req, res) => {
     });
 
     if (!response.ok) {
-      return res.status(502).json({ error: 'Ses oluşturulamadı.' });
+      const raw = await response.text();
+      let detail = '';
+      try {
+        const data = JSON.parse(raw);
+        detail = data.detail?.message || data.detail || data.message || '';
+      } catch {
+        detail = raw;
+      }
+      return res.status(502).json({
+        error: detail ? `Ses oluşturulamadı: ${detail}` : 'Ses oluşturulamadı.',
+      });
     }
 
     const audioBuffer = Buffer.from(await response.arrayBuffer());
