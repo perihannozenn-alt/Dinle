@@ -37,9 +37,9 @@ const C = {
 };
 
 const TONES = [
-  { id: 'soft_f', name: 'Soft Kadın Sesi', emoji: '🌙', color: '#D8B4FE', desc: 'Roman ve gece dinleme', voiceId: '5k0SUQMAw9FAMiMpVAnK', stability: 0.78, style: 0.25 },
-  { id: 'academic_m', name: 'Akademik Erkek Sesi', emoji: '🎓', color: '#8EF46A', desc: 'PDF ve akademik metinler', voiceId: 'jn9r0BbscFxzXTZWvqPO', stability: 0.86, style: 0.05 },
-  { id: 'tale_f', name: 'Masalsı Kadın Sesi', emoji: '✨', color: '#C9A96E', desc: 'Masal ve hikaye anlatımı', voiceId: 'bxi3fRnQ9ub4TxPfgkcM', stability: 0.68, style: 0.45 },
+  { id: 'soft_f', name: 'Soft Kadın Sesi', emoji: '🌙', color: '#D8B4FE', desc: 'Roman ve gece dinleme', voiceId: '5k0SUQMAw9FAMiMpVAnK', stability: 0.78, style: 0.25, sample: 'Gece sakinleşirken, kelimeler yavaşça akar ve hikâye usulca dinleyenin yanında yürür.' },
+  { id: 'academic_m', name: 'Akademik Erkek Sesi', emoji: '🎓', color: '#8EF46A', desc: 'PDF ve akademik metinler', voiceId: 'jn9r0BbscFxzXTZWvqPO', stability: 0.86, style: 0.05, sample: 'Bu bölümde temel kavramları sade biçimde ele alıyor ve ana fikri kısa bir özetle güçlendiriyoruz.' },
+  { id: 'tale_f', name: 'Masalsı Kadın Sesi', emoji: '✨', color: '#C9A96E', desc: 'Masal ve hikaye anlatımı', voiceId: 'bxi3fRnQ9ub4TxPfgkcM', stability: 0.68, style: 0.45, sample: 'Uzak bir vadide, yıldızların altında parlayan küçük bir kapı sessizce aralandı.' },
 ];
 
 const SLEEP = [
@@ -136,16 +136,7 @@ const DISCOVER_BOOKS = [
 
 const CATEGORIES = ['Tümü', 'Roman', 'Çocuk', 'Tarih', 'Bilim Kurgu', 'Kişisel Gelişim', 'Polisiye'];
 
-const DEMO_BOOKS = [
-  {
-    id: '1', title: 'Küçük Prens', color: '#C9A96E',
-    pages: [
-      'Büyükler rakamları çok severler. Onlara yeni bir arkadaştan söz ettiğinizde, önemli olan şeyleri hiç sormazlar.',
-      'Ben bu gezegende çok yalnız yaşıyordum. Ta ki bir arıza yüzünden Sahra Çölüne inene kadar.',
-      'Tilki dedi ki: İşte sırrım, çok basit. İnsan ancak yüreğiyle görebilir.',
-    ],
-  },
-];
+const DEMO_BOOKS: any[] = [];
 
 interface RegProps {
   form: { ad: string; soyad: string; email: string; tel: string; password: string };
@@ -427,14 +418,22 @@ export default function App() {
   async function speak(text: string) {
     if (!checkPageLimit()) return;
     setPageCount(p => p + 1);
+    await playText(text, tone);
+  }
+
+  async function previewTone(nextTone: any) {
+    await playText(nextTone.sample, nextTone);
+  }
+
+  async function playText(text: string, voiceTone: any) {
     try {
       setIsLoading(true);
       stopAudio();
       const data = await apiPost('/text-to-speech', {
         text,
-        voiceId: tone.voiceId,
-        stability: tone.stability,
-        style: tone.style,
+        voiceId: voiceTone.voiceId,
+        stability: voiceTone.stability,
+        style: voiceTone.style,
       });
       const dataUri = 'data:audio/mpeg;base64,' + data.audioBase64;
       const ExpoAV = require('expo-av');
@@ -828,14 +827,19 @@ export default function App() {
         <View style={s.sheet}>
           <Text style={s.sheetTitle}>Ses Tonu Seç</Text>
           {TONES.map(t => (
-            <TouchableOpacity key={t.id} style={[s.toneRow, tone.id === t.id && { backgroundColor: t.color + '22' }]} onPress={() => { setTone(t); setShowTones(false); stopAudio(); }}>
+            <View key={t.id} style={[s.toneRow, tone.id === t.id && { backgroundColor: t.color + '22' }]}>
               <Text style={{ fontSize: 22 }}>{t.emoji}</Text>
               <View style={{ flex: 1, marginLeft: 12 }}>
                 <Text style={[s.bookTitle, tone.id === t.id && { color: t.color }]}>{t.name}</Text>
                 <Text style={s.bookMeta}>{t.desc}</Text>
               </View>
-              {tone.id === t.id && <Text style={{ color: t.color, fontWeight: '700' }}>v</Text>}
-            </TouchableOpacity>
+              <TouchableOpacity style={s.previewBtn} onPress={() => previewTone(t)} disabled={isLoading}>
+                <Text style={{ color: t.color, fontSize: 12, fontWeight: '700' }}>Dene</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[s.selectBtn, { borderColor: t.color }]} onPress={() => { setTone(t); setShowTones(false); stopAudio(); }}>
+                <Text style={{ color: tone.id === t.id ? t.color : C.textMuted, fontSize: 12, fontWeight: '700' }}>{tone.id === t.id ? 'Seçili' : 'Seç'}</Text>
+              </TouchableOpacity>
+            </View>
           ))}
         </View>
       </TouchableOpacity>
@@ -943,6 +947,8 @@ const s = StyleSheet.create({
   sheet: { backgroundColor: C.elevated, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
   sheetTitle: { fontFamily: 'Georgia', fontSize: 18, color: C.text, fontWeight: '700', marginBottom: 16 },
   toneRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, marginBottom: 6 },
+  previewBtn: { paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, backgroundColor: C.surface, marginLeft: 8 },
+  selectBtn: { paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, borderWidth: 1, marginLeft: 6 },
   smallBtn: { borderWidth: 1, borderColor: C.border, backgroundColor: C.surface, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10 },
   btn: { backgroundColor: C.primary, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12, marginTop: 16, alignItems: 'center' },
   btnText: { fontFamily: 'Georgia', fontSize: 14, color: C.bg, fontWeight: '700' },
