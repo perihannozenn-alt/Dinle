@@ -567,7 +567,7 @@ export default function App() {
         <ScrollView contentContainerStyle={{ minHeight: Dimensions.get('window').height - 80, justifyContent: 'center', padding: 24 }}>
           <View style={{ alignItems: 'center', marginBottom: 34 }}>
             <Image source={LOGO} style={s.logoMark} />
-            <Text style={{ fontFamily: 'Georgia', fontSize: 32, color: C.text, fontWeight: '700', marginTop: 18 }}>Dinle</Text>
+            <Text style={s.authLogoTitle}>Dinle</Text>
             <Text style={{ fontSize: 14, color: C.textMuted, marginTop: 10, textAlign: 'center', lineHeight: 22 }}>PDF'lerini konuşan hikâyelere dönüştür. Uyurken, yürürken, dinlerken kaldığın yerden devam et.</Text>
           </View>
           <TouchableOpacity style={s.btn} onPress={() => setScreen('register')}>
@@ -960,6 +960,7 @@ const s = StyleSheet.create({
   listContent: { padding: 16, paddingBottom: 32 },
   logoMark: { width: 142, height: 142, borderRadius: 32 },
   logoMarkSmall: { width: 86, height: 86, borderRadius: 22 },
+  authLogoTitle: { fontSize: 34, color: C.primary, fontWeight: '800', marginTop: 18, letterSpacing: 0 },
   bookCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: C.surface, borderRadius: 14, padding: 14, marginBottom: 10, borderLeftWidth: 4 },
   bookCover: { width: 52, height: 52, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   discoverCover: { width: 58, height: 82, borderRadius: 8, backgroundColor: C.elevated },
