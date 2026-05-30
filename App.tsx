@@ -284,7 +284,9 @@ export default function App() {
         const raw = await FileSystem.readAsStringAsync(BOOKS_STORAGE_PATH);
         const savedBooks = JSON.parse(raw);
         if (Array.isArray(savedBooks) && savedBooks.length > 0) {
-          setBooks(savedBooks);
+          const userBooks = savedBooks.filter(book => book?.id !== '1' && book?.title !== 'Küçük Prens');
+          setBooks(userBooks);
+          if (userBooks.length !== savedBooks.length) saveBooks(userBooks);
         }
       } catch {}
     }
@@ -703,6 +705,9 @@ export default function App() {
           <View style={{ height: 3, width: progress + '%' as any, backgroundColor: C.primary }} />
         </View>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24 }}>
+          <TouchableOpacity onPress={summarizeBook} style={s.summaryCta} disabled={summaryLoading}>
+            <Text style={{ color: C.bg, fontSize: 14, fontWeight: '700' }}>{summaryLoading ? 'AI özet hazırlanıyor...' : 'AI Özet Oluştur'}</Text>
+          </TouchableOpacity>
           <Text style={s.pageText}>{page}</Text>
           {bm && <Text style={{ color: C.primary, fontSize: 12, marginTop: 16 }}>Bu sayfa işaretlendi</Text>}
         </ScrollView>
@@ -925,6 +930,7 @@ const s = StyleSheet.create({
   progressFill: { height: '100%', borderRadius: 2 },
   uploadBox: { backgroundColor: C.surface, borderRadius: 16, borderWidth: 1.5, borderColor: C.primary, borderStyle: 'dashed', padding: 32, alignItems: 'center', marginTop: 8 },
   badge: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
+  summaryCta: { backgroundColor: C.primary, paddingVertical: 11, paddingHorizontal: 14, borderRadius: 12, alignItems: 'center', marginBottom: 18 },
   pageText: { fontFamily: 'Georgia', fontSize: 18, color: C.text, lineHeight: 32, letterSpacing: 0.3 },
   playBtn: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
   sleepCard: { height: 132, borderRadius: 14, marginBottom: 12, borderWidth: 1, borderColor: C.border, overflow: 'hidden', backgroundColor: C.surface },
