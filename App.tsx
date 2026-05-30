@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   Alert, Dimensions, Modal, ActivityIndicator, Linking,
-  TextInput, KeyboardAvoidingView, Platform, Image, Animated, Easing,
+  TextInput, KeyboardAvoidingView, Platform, Image,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import { ResizeMode, Video } from 'expo-av';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { initializeApp } from 'firebase/app';
@@ -26,7 +27,7 @@ const db = getFirestore(firebaseApp);
 
 const API_BASE_URL = 'https://dinle-api.onrender.com';
 const LOGO = require('./assets/dinle-logo.jpeg');
-const OPENING_SOUND = require('./assets/dinle-opening.mp3');
+const SPLASH_VIDEO = require('./assets/logo-animasyonu.mp4');
 const BOOKS_STORAGE_PATH = (FileSystem.documentDirectory || '') + 'dinle-books.json';
 
 const C = {
@@ -36,15 +37,15 @@ const C = {
 };
 
 const TONES = [
-  { id: 'soft_f', name: 'Soft Kadin', emoji: '🌙', color: '#D8B4FE', desc: 'Roman ve gece dinleme', voiceId: '5k0SUQMAw9FAMiMpVAnK', stability: 0.78, style: 0.25 },
-  { id: 'academic_m', name: 'Akademik Erkek', emoji: '🎓', color: '#8EF46A', desc: 'PDF ve akademik metinler', voiceId: 'jn9r0BbscFxzXTZWvqPO', stability: 0.86, style: 0.05 },
-  { id: 'tale_f', name: 'Masalsi Kadin', emoji: '✨', color: '#C9A96E', desc: 'Masal ve hikaye anlatımı', voiceId: 'bxi3fRnQ9ub4TxPfgkcM', stability: 0.68, style: 0.45 },
+  { id: 'soft_f', name: 'Soft Kadın Sesi', emoji: '🌙', color: '#D8B4FE', desc: 'Roman ve gece dinleme', voiceId: '5k0SUQMAw9FAMiMpVAnK', stability: 0.78, style: 0.25 },
+  { id: 'academic_m', name: 'Akademik Erkek Sesi', emoji: '🎓', color: '#8EF46A', desc: 'PDF ve akademik metinler', voiceId: 'jn9r0BbscFxzXTZWvqPO', stability: 0.86, style: 0.05 },
+  { id: 'tale_f', name: 'Masalsı Kadın Sesi', emoji: '✨', color: '#C9A96E', desc: 'Masal ve hikaye anlatımı', voiceId: 'bxi3fRnQ9ub4TxPfgkcM', stability: 0.68, style: 0.45 },
 ];
 
 const SLEEP = [
   { id: 'baby1', title: 'Bebek Derin Uykusu', emoji: '🍼', duration: '1 saat', yt: 'YCyjfI5_DgU' },
-  { id: 'fire1', title: 'Şömine ve Ambiyans', emoji: '🔥', duration: '1 saat', yt: 'R4VVda_-V9A' },
-  { id: 'fire2', title: 'Sadece Şömine',      emoji: '🪵', duration: '1 saat', yt: 'hHx1dMjDRGo' },
+  { id: 'fire1', title: 'Loş Ambians ile Derin Odaklanma', emoji: '🔥', duration: '1 saat', yt: 'R4VVda_-V9A' },
+  { id: 'fire2', title: 'Yağmur Sesi ve Şömine Ateşi',      emoji: '🪵', duration: '54 dk',  yt: 'hHx1dMjDRGo' },
   { id: 'fire3', title: 'Şömine ve Rüzgar',   emoji: '🌬️', duration: '1 saat', yt: 'gOtqZPYfNgY' },
   { id: 'med1',  title: 'Gece Meditasyonu',   emoji: '🌙', duration: '20 dk',  yt: 'uhVPfW-P4ks' },
 ];
@@ -196,152 +197,26 @@ function RegisterForm({ form, onChange, onBack, onSubmit }: RegProps) {
   );
 }
 
-function PremiumSplash() {
-  const logoOpacity = useRef(new Animated.Value(0)).current;
-  const logoScale = useRef(new Animated.Value(0.72)).current;
-  const titleOpacity = useRef(new Animated.Value(0)).current;
-  const titleY = useRef(new Animated.Value(12)).current;
-  const wave = useRef(new Animated.Value(0)).current;
-  const breathe = useRef(new Animated.Value(0)).current;
-  const reveal = useRef(new Animated.Value(0)).current;
-
+function PremiumSplash({ onFinish }: { onFinish: () => void }) {
   useEffect(() => {
-    let soundRef: any;
-    const ExpoAV = require('expo-av');
-    ExpoAV.Audio.Sound.createAsync(OPENING_SOUND, { shouldPlay: true, volume: 0.36 })
-      .then(({ sound }: any) => { soundRef = sound; })
-      .catch(() => {});
-
-    Animated.parallel([
-      Animated.timing(logoOpacity, {
-        toValue: 1,
-        duration: 1100,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(logoScale, {
-        toValue: 1,
-        duration: 1600,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(reveal, {
-        toValue: 1,
-        duration: 1350,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.sequence([
-        Animated.delay(1550),
-        Animated.parallel([
-          Animated.timing(titleOpacity, {
-            toValue: 1,
-            duration: 800,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-          Animated.timing(titleY, {
-            toValue: 0,
-            duration: 800,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-        ]),
-      ]),
-    ]).start();
-
-    Animated.loop(
-      Animated.timing(wave, {
-        toValue: 1,
-        duration: 3200,
-        easing: Easing.inOut(Easing.sin),
-        useNativeDriver: true,
-      })
-    ).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(breathe, {
-          toValue: 1,
-          duration: 1800,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-        Animated.timing(breathe, {
-          toValue: 0,
-          duration: 1800,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    return () => {
-      if (soundRef) soundRef.unloadAsync().catch(() => {});
-    };
-  }, [breathe, logoOpacity, logoScale, reveal, titleOpacity, titleY, wave]);
-
-  const waveMove = wave.interpolate({ inputRange: [0, 1], outputRange: [-90, 90] });
-  const waveFade = wave.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.22, 0.88, 0.22] });
-  const breathScale = breathe.interpolate({ inputRange: [0, 1], outputRange: [1, 1.045] });
-  const revealY = reveal.interpolate({ inputRange: [0, 1], outputRange: [26, 0] });
-  const revealRotate = reveal.interpolate({ inputRange: [0, 1], outputRange: ['-4deg', '0deg'] });
+    const fallback = setTimeout(onFinish, 5400);
+    return () => clearTimeout(fallback);
+  }, [onFinish]);
 
   return (
     <SafeAreaProvider>
       <SafeAreaView style={s.splashRoot}>
-        <View style={s.splashBackdrop}>
-          {[0, 1, 2, 3, 4].map(row => (
-            <Animated.View
-              key={row}
-              style={[
-                s.waveRow,
-                {
-                  opacity: waveFade,
-                  top: 230 + row * 22,
-                  transform: [
-                    { translateX: waveMove },
-                    { scaleY: row === 1 ? breathScale : 1 },
-                  ],
-                },
-              ]}
-            >
-              {Array.from({ length: 32 }).map((_, i) => (
-                <View
-                  key={i}
-                  style={[
-                    s.waveDot,
-                    {
-                      opacity: 0.12 + ((i + row) % 8) * 0.09,
-                      transform: [{ translateY: Math.sin((i + row) / 2.2) * 26 }],
-                    },
-                  ]}
-                />
-              ))}
-            </Animated.View>
-          ))}
-
-          <Animated.View
-            style={[
-              s.splashLogoWrap,
-              {
-                opacity: logoOpacity,
-                transform: [
-                  { translateY: revealY },
-                  { rotate: revealRotate },
-                  { scale: Animated.multiply(logoScale, breathScale) },
-                ],
-              },
-            ]}
-          >
-            <Image source={LOGO} style={s.splashLogo} />
-          </Animated.View>
-
-          <Animated.View style={{ opacity: titleOpacity, transform: [{ translateY: titleY }], alignItems: 'center' }}>
-            <Text style={s.splashTitle}>Dinle</Text>
-            <Text style={s.splashSubtitle}>Yapay zekâ destekli ses deneyimi</Text>
-          </Animated.View>
-        </View>
+        <Video
+          source={SPLASH_VIDEO}
+          style={s.splashVideo}
+          resizeMode={ResizeMode.CONTAIN}
+          shouldPlay
+          isLooping={false}
+          useNativeControls={false}
+          onPlaybackStatusUpdate={(status: any) => {
+            if (status?.didJustFinish) onFinish();
+          }}
+        />
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -374,10 +249,6 @@ export default function App() {
     return unsub;
   }, []);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setSplashDone(true), 3600);
-    return () => clearTimeout(timer);
-  }, []);
   const [pageCount, setPageCount] = useState(0);
   const [books, setBooks] = useState(DEMO_BOOKS);
   const [activeBook, setActiveBook] = useState<any>(null);
@@ -657,7 +528,7 @@ export default function App() {
   function isBookmarked(bookId: string, pageIdx: number) { return bookmarks.includes(bookId + '-' + pageIdx); }
   function openBook(book: any) { setActiveBook(book); setCurrentPage(0); setTab('reader'); stopAudio(); }
 
-  if (authLoading || !splashDone) return <PremiumSplash />;
+  if (authLoading || !splashDone) return <PremiumSplash onFinish={() => setSplashDone(true)} />;
 
   if (screen === 'auth') return (
     <SafeAreaProvider>
@@ -1043,36 +914,9 @@ export default function App() {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   splashRoot: { flex: 1, backgroundColor: '#080512' },
-  splashBackdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  splashLogoWrap: {
-    width: 196,
-    height: 196,
-    borderRadius: 46,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: C.primary,
-    shadowOpacity: 0.35,
-    shadowRadius: 34,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 12,
-  },
-  splashLogo: { width: 184, height: 184, borderRadius: 42 },
-  splashTitle: { fontFamily: 'Georgia', fontSize: 38, color: C.text, fontWeight: '700', marginTop: 28 },
-  splashSubtitle: { color: C.textSub, fontSize: 14, marginTop: 8, letterSpacing: 0 },
-  waveRow: {
-    position: 'absolute',
-    left: -40,
-    right: -40,
-    height: 34,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 9,
-  },
-  waveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: C.primary,
+  splashVideo: {
+    width: '100%',
+    height: '100%',
   },
   listContent: { padding: 16, paddingBottom: 32 },
   logoMark: { width: 142, height: 142, borderRadius: 32 },
