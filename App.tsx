@@ -259,8 +259,7 @@ export default function App() {
   const [showSummary, setShowSummary] = useState(false);
   const audioRef = useRef<any>(null);
 
-  const FREE_LIMIT = 20;
-  const TEMEL_LIMIT = 100;
+  const FREE_LIMIT = 5;
 
   async function saveBooks(nextBooks: any[]) {
     try {
@@ -368,16 +367,8 @@ export default function App() {
   }
 
   function checkPageLimit(): boolean {
-    if (plan === 'free' && pageCount >= FREE_LIMIT) {
-      Alert.alert('Limit Doldu', 'Ücretsiz planda ayda 20 sayfa. Plana gecmek ister misiniz?',
-        [{ text: 'İptal', style: 'cancel' }, { text: 'Plana Geç', onPress: () => setScreen('plan') }]
-      );
-      return false;
-    }
-    if (plan === 'temel' && pageCount >= TEMEL_LIMIT) {
-      Alert.alert('Limit Doldu', 'Temel planda ayda 100 sayfa. Premium ister misiniz?',
-        [{ text: 'İptal', style: 'cancel' }, { text: 'Plana Geç', onPress: () => setScreen('plan') }]
-      );
+    if (pageCount >= FREE_LIMIT) {
+      Alert.alert('Deneme Hakkı Doldu', 'Bu ay ücretsiz seslendirme hakkın doldu. Yeni hakların gelecek ay yenilenecek.');
       return false;
     }
     return true;
@@ -417,8 +408,8 @@ export default function App() {
 
   async function speak(text: string) {
     if (!checkPageLimit()) return;
-    setPageCount(p => p + 1);
     await playText(text, tone);
+    setPageCount(p => p + 1);
   }
 
   async function previewTone(nextTone: any) {
@@ -605,12 +596,13 @@ export default function App() {
     <SafeAreaProvider>
       <SafeAreaView style={s.root}>
         <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-          <Text style={{ fontFamily: 'Georgia', fontSize: 24, color: C.text, fontWeight: '700', marginBottom: 4, marginTop: 8 }}>Plan Seç</Text>
-          <Text style={{ fontSize: 13, color: C.textMuted, marginBottom: 24 }}>İhtiyacına göre bir plan seç</Text>
+          <TouchableOpacity onPress={() => setScreen('register')} style={{ marginBottom: 20, marginTop: 8 }}>
+            <Text style={{ color: C.textSub, fontSize: 16 }}>Geri</Text>
+          </TouchableOpacity>
+          <Text style={{ fontFamily: 'Georgia', fontSize: 24, color: C.text, fontWeight: '700', marginBottom: 4 }}>Ücretsiz Deneme</Text>
+          <Text style={{ fontSize: 13, color: C.textMuted, marginBottom: 24 }}>İlk sürümde herkes ücretsiz deneme hakkıyla başlayacak.</Text>
           {[
-            { id: 'free', name: 'Ücretsiz', price: '0 TL/ay', color: C.border, features: ['20 sayfa/ay', '3 ses tonu', 'Uyku sesleri'], noFeatures: ['PDF yükleme'] },
-            { id: 'temel', name: 'Temel', price: '79 TL/ay', color: C.primary, features: ['100 sayfa/ay', 'Tüm ses tonları', 'PDF yükleme', 'Uyku sesleri'], noFeatures: [], badge: 'POPULER' },
-            { id: 'premium', name: 'Premium', price: '129 TL/ay', color: C.accent, features: ['Sınırsız sayfa', 'Tüm ses tonları', 'PDF yükleme', 'Uyku sesleri', 'Öncelikli destek'], noFeatures: [] },
+            { id: 'free', name: 'Dinle Deneme', price: '0 TL', color: C.primary, features: ['Ayda yaklaşık 5 sayfa seslendirme', 'Ayda 3 PDF okuma', 'Ayda 3 AI özet', '3 özel ses tonu', 'Uyku sesleri'], noFeatures: [] },
           ].map(p => (
             <TouchableOpacity key={p.id} style={[s.planCard, { borderColor: p.color }]} onPress={() => handleSelectPlan(p.id as any)}>
               {(p as any).badge && <View style={[s.planBadge, { backgroundColor: p.color }]}><Text style={{ color: C.bg, fontSize: 11, fontWeight: '700' }}>{(p as any).badge}</Text></View>}
@@ -621,7 +613,7 @@ export default function App() {
               {p.features.map(f => <Text key={f} style={{ fontSize: 14, color: C.textSub, marginBottom: 6 }}>{'v ' + f}</Text>)}
               {p.noFeatures.map(f => <Text key={f} style={{ fontSize: 14, color: C.textMuted, marginBottom: 6 }}>{'x ' + f}</Text>)}
               <View style={[s.planBtn, { backgroundColor: p.color }]}>
-                <Text style={{ color: p.id === 'free' ? C.text : C.bg, fontWeight: '700', fontSize: 14 }}>{p.name + ' Plani Sec'}</Text>
+                <Text style={{ color: C.bg, fontWeight: '700', fontSize: 14 }}>Ücretsiz Başla</Text>
               </View>
             </TouchableOpacity>
           ))}

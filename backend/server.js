@@ -13,6 +13,12 @@ const allowedVoiceIds = new Set([
   'bxi3fRnQ9ub4TxPfgkcM',
 ]);
 
+const monthlyLimits = {
+  ttsChars: 8500,
+  pdfUploads: 3,
+  summaries: 3,
+};
+
 function parseServiceAccount() {
   const rawValue = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (!rawValue) return null;
@@ -69,6 +75,34 @@ function requireKeys(res, keys) {
   return true;
 }
 
+function currentUsageMonth() {
+  return new Date().toISOString().slice(0, 7);
+}
+
+async function consumeUsage(uid, field, amount, limit, message) {
+  const db = admin.firestore();
+  const usageRef = db.collection('users').doc(uid).collection('usage').doc(currentUsageMonth());
+  await db.runTransaction(async transaction => {
+    const snap = await transaction.get(usageRef);
+    const usage = snap.exists ? snap.data() : {};
+    const current = Number(usage[field] || 0);
+    if (current + amount > limit) {
+      const error = new Error(message);
+      error.statusCode = 429;
+      throw error;
+    }
+    transaction.set(usageRef, {
+      [field]: current + amount,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+  });
+}
+
+function handleApiError(res, error, fallbackMessage) {
+  const status = error.statusCode || 500;
+  res.status(status).json({ error: error.message || fallbackMessage });
+}
+
 app.get('/health', (_req, res) => {
   res.json({ ok: true });
 });
@@ -86,6 +120,13 @@ app.post('/text-to-speech', requireUser, async (req, res) => {
     if (typeof voiceId !== 'string' || !allowedVoiceIds.has(voiceId)) {
       return res.status(400).json({ error: 'Bu ses tonu desteklenmiyor.' });
     }
+    await consumeUsage(
+      req.user.uid,
+      'ttsChars',
+      text.length,
+      monthlyLimits.ttsChars,
+      'Aylık ücretsiz seslendirme hakkın doldu. Yeni hakların gelecek ay yenilenecek.'
+    );
 
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
@@ -122,7 +163,7 @@ app.post('/text-to-speech', requireUser, async (req, res) => {
     const audioBuffer = Buffer.from(await response.arrayBuffer());
     res.json({ audioBase64: audioBuffer.toString('base64'), contentType: 'audio/mpeg' });
   } catch (error) {
-    res.status(500).json({ error: error.message || 'Ses oluşturulamadı.' });
+    handleApiError(res, error, 'Ses oluşturulamadı.');
   }
 });
 
@@ -136,6 +177,13 @@ app.post('/extract-pdf-text', requireUser, async (req, res) => {
     if (pdfBase64.length > 18_000_000) {
       return res.status(400).json({ error: 'PDF şimdilik çok büyük. 10 MB altı bir dosya deneyin.' });
     }
+    await consumeUsage(
+      req.user.uid,
+      'pdfUploads',
+      1,
+      monthlyLimits.pdfUploads,
+      'Aylık ücretsiz PDF okuma hakkın doldu. Yeni hakların gelecek ay yenilenecek.'
+    );
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -174,7 +222,7 @@ app.post('/extract-pdf-text', requireUser, async (req, res) => {
 
     res.json({ text: data.content?.[0]?.text || '' });
   } catch (error) {
-    res.status(500).json({ error: error.message || 'PDF metni çıkarılamadı.' });
+    handleApiError(res, error, 'PDF metni çıkarılamadı.');
   }
 });
 
@@ -185,6 +233,13 @@ app.post('/summarize', requireUser, async (req, res) => {
     if (typeof text !== 'string' || text.trim().length < 100) {
       return res.status(400).json({ error: 'Özetlenecek metin bulunamadı.' });
     }
+    await consumeUsage(
+      req.user.uid,
+      'summaries',
+      1,
+      monthlyLimits.summaries,
+      'Aylık ücretsiz özet hakkın doldu. Yeni hakların gelecek ay yenilenecek.'
+    );
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -214,7 +269,7 @@ app.post('/summarize', requireUser, async (req, res) => {
 
     res.json({ summary: data.content?.[0]?.text || '' });
   } catch (error) {
-    res.status(500).json({ error: error.message || 'Özet oluşturulamadı.' });
+    handleApiError(res, error, 'Özet oluşturulamadı.');
   }
 });
 
