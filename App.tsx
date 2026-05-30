@@ -29,6 +29,7 @@ const API_BASE_URL = 'https://dinle-api.onrender.com';
 const LOGO = require('./assets/dinle-logo.jpeg');
 const SPLASH_VIDEO = require('./assets/logo-animasyonu.mp4');
 const BOOKS_STORAGE_PATH = (FileSystem.documentDirectory || '') + 'dinle-books.json';
+const ADMOB_REWARDED_AD_UNIT_ID = 'ca-app-pub-8615121220645496/6277529119';
 
 const C = {
   bg: '#0F0E17', surface: '#1A1826', elevated: '#231F35',
@@ -257,6 +258,7 @@ export default function App() {
   const [summaryText, setSummaryText] = useState('');
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+  const [rewardPages, setRewardPages] = useState(0);
   const audioRef = useRef<any>(null);
 
   const FREE_LIMIT = 5;
@@ -369,11 +371,48 @@ export default function App() {
   }
 
   function checkPageLimit(): boolean {
-    if (pageCount >= FREE_LIMIT) {
-      Alert.alert('Deneme Hakkı Doldu', 'Bu ay ücretsiz seslendirme hakkın doldu. Yeni hakların gelecek ay yenilenecek.');
+    if (pageCount >= FREE_LIMIT + rewardPages) {
+      Alert.alert(
+        'Deneme Hakkı Doldu',
+        'Bu ay ücretsiz seslendirme hakkın doldu. İstersen 1 ek sayfa için ödüllü reklam izleyebilirsin.',
+        [{ text: 'Tamam', style: 'cancel' }, { text: 'Reklam İzle', onPress: showRewardedAd }]
+      );
       return false;
     }
     return true;
+  }
+
+  async function showRewardedAd() {
+    try {
+      const ads = require('react-native-google-mobile-ads');
+      const adUnitId = __DEV__ ? ads.TestIds.REWARDED : ADMOB_REWARDED_AD_UNIT_ID;
+      const rewarded = ads.RewardedAd.createForAdRequest(adUnitId);
+      let cleanup: Array<() => void> = [];
+
+      cleanup.push(rewarded.addAdEventListener(ads.RewardedAdEventType.LOADED, () => {
+        rewarded.show();
+      }));
+      cleanup.push(rewarded.addAdEventListener(ads.RewardedAdEventType.EARNED_REWARD, async () => {
+        try {
+          await apiPost('/grant-reward', { reward: 'tts_page' });
+          setRewardPages(p => p + 1);
+          Alert.alert('Ek Hak Kazandın', '1 ek sayfa seslendirme hakkı eklendi.');
+        } catch (err: any) {
+          Alert.alert('Ek Hak Eklenemedi', err.message || 'Reklam izlendi ama ek hak tanımlanamadı. Lütfen tekrar dene.');
+        }
+      }));
+      cleanup.push(rewarded.addAdEventListener(ads.AdEventType.CLOSED, () => {
+        cleanup.forEach(unsubscribe => unsubscribe());
+      }));
+      cleanup.push(rewarded.addAdEventListener(ads.AdEventType.ERROR, () => {
+        cleanup.forEach(unsubscribe => unsubscribe());
+        Alert.alert('Reklam Hazır Değil', 'Ödüllü reklam şu anda gösterilemiyor. Birazdan tekrar deneyebilirsin.');
+      }));
+
+      rewarded.load();
+    } catch {
+      Alert.alert('Reklam Testi İçin Hazırlık Gerekli', 'Ödüllü reklamlar Expo Go içinde çalışmaz. Bunun için AdMob paketini kurup development build almamız gerekiyor.');
+    }
   }
 
   async function apiPost(path: string, body: any) {

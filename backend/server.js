@@ -17,6 +17,8 @@ const monthlyLimits = {
   ttsChars: 8500,
   pdfUploads: 3,
   summaries: 3,
+  rewardedPages: 3,
+  rewardedTtsCharsPerPage: 1600,
 };
 
 function parseServiceAccount() {
@@ -98,6 +100,26 @@ async function consumeUsage(uid, field, amount, limit, message) {
   });
 }
 
+async function consumeTtsUsage(uid, amount) {
+  const db = admin.firestore();
+  const usageRef = db.collection('users').doc(uid).collection('usage').doc(currentUsageMonth());
+  await db.runTransaction(async transaction => {
+    const snap = await transaction.get(usageRef);
+    const usage = snap.exists ? snap.data() : {};
+    const current = Number(usage.ttsChars || 0);
+    const rewarded = Number(usage.rewardedTtsChars || 0);
+    if (current + amount > monthlyLimits.ttsChars + rewarded) {
+      const error = new Error('Aylık ücretsiz seslendirme hakkın doldu. 1 ek sayfa için ödüllü reklam izleyebilirsin.');
+      error.statusCode = 429;
+      throw error;
+    }
+    transaction.set(usageRef, {
+      ttsChars: current + amount,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+  });
+}
+
 function handleApiError(res, error, fallbackMessage) {
   const status = error.statusCode || 500;
   res.status(status).json({ error: error.message || fallbackMessage });
@@ -105,6 +127,31 @@ function handleApiError(res, error, fallbackMessage) {
 
 app.get('/health', (_req, res) => {
   res.json({ ok: true });
+});
+
+app.post('/grant-reward', requireUser, async (req, res) => {
+  try {
+    const db = admin.firestore();
+    const usageRef = db.collection('users').doc(req.user.uid).collection('usage').doc(currentUsageMonth());
+    await db.runTransaction(async transaction => {
+      const snap = await transaction.get(usageRef);
+      const usage = snap.exists ? snap.data() : {};
+      const rewardedPages = Number(usage.rewardedPages || 0);
+      if (rewardedPages >= monthlyLimits.rewardedPages) {
+        const error = new Error('Bu ay alınabilecek ödüllü ek hak sınırına ulaştın.');
+        error.statusCode = 429;
+        throw error;
+      }
+      transaction.set(usageRef, {
+        rewardedPages: rewardedPages + 1,
+        rewardedTtsChars: Number(usage.rewardedTtsChars || 0) + monthlyLimits.rewardedTtsCharsPerPage,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+    });
+    res.json({ ok: true, extraPages: 1 });
+  } catch (error) {
+    handleApiError(res, error, 'Ek hak tanımlanamadı.');
+  }
 });
 
 app.post('/text-to-speech', requireUser, async (req, res) => {
@@ -120,13 +167,7 @@ app.post('/text-to-speech', requireUser, async (req, res) => {
     if (typeof voiceId !== 'string' || !allowedVoiceIds.has(voiceId)) {
       return res.status(400).json({ error: 'Bu ses tonu desteklenmiyor.' });
     }
-    await consumeUsage(
-      req.user.uid,
-      'ttsChars',
-      text.length,
-      monthlyLimits.ttsChars,
-      'Aylık ücretsiz seslendirme hakkın doldu. Yeni hakların gelecek ay yenilenecek.'
-    );
+    await consumeTtsUsage(req.user.uid, text.length);
 
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
