@@ -26,7 +26,8 @@ const db = getFirestore(firebaseApp);
 
 const API_BASE_URL = 'https://dinle-api.onrender.com';
 const LOGO = require('./assets/dinle-logo.jpeg');
-const OPENING_SOUND = require('./assets/dinle-opening.wav');
+const OPENING_SOUND = require('./assets/dinle-opening.mp3');
+const BOOKS_STORAGE_PATH = (FileSystem.documentDirectory || '') + 'dinle-books.json';
 
 const C = {
   bg: '#0F0E17', surface: '#1A1826', elevated: '#231F35',
@@ -41,10 +42,10 @@ const TONES = [
 ];
 
 const SLEEP = [
-  { id: 'fire1', title: 'Şömine ve Ambiyans', emoji: '🔥', duration: '1 saat', yt: 'R4VVda_-V9A' },
-  { id: 'fire2', title: 'Sadece Şömine',      emoji: '🪵', duration: '54 dk',  yt: 'zmohLk-i2w8' },
-  { id: 'fire3', title: 'Şömine ve Rüzgar',   emoji: '🌬️', duration: '1 saat', yt: 'gOtqZPYfNgY' },
   { id: 'baby1', title: 'Bebek Derin Uykusu', emoji: '🍼', duration: '1 saat', yt: 'YCyjfI5_DgU' },
+  { id: 'fire1', title: 'Şömine ve Ambiyans', emoji: '🔥', duration: '1 saat', yt: 'R4VVda_-V9A' },
+  { id: 'fire2', title: 'Sadece Şömine',      emoji: '🪵', duration: '1 saat', yt: 'hHx1dMjDRGo' },
+  { id: 'fire3', title: 'Şömine ve Rüzgar',   emoji: '🌬️', duration: '1 saat', yt: 'gOtqZPYfNgY' },
   { id: 'med1',  title: 'Gece Meditasyonu',   emoji: '🌙', duration: '20 dk',  yt: 'uhVPfW-P4ks' },
 ];
 
@@ -399,6 +400,12 @@ export default function App() {
   const FREE_LIMIT = 20;
   const TEMEL_LIMIT = 100;
 
+  async function saveBooks(nextBooks: any[]) {
+    try {
+      await FileSystem.writeAsStringAsync(BOOKS_STORAGE_PATH, JSON.stringify(nextBooks));
+    } catch {}
+  }
+
   useEffect(() => {
     const ExpoAV = require('expo-av');
     ExpoAV.Audio.setAudioModeAsync({
@@ -406,6 +413,21 @@ export default function App() {
       playsInSilentModeIOS: true,
       shouldDuckAndroid: true,
     }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    async function loadSavedBooks() {
+      try {
+        const info = await FileSystem.getInfoAsync(BOOKS_STORAGE_PATH);
+        if (!info.exists) return;
+        const raw = await FileSystem.readAsStringAsync(BOOKS_STORAGE_PATH);
+        const savedBooks = JSON.parse(raw);
+        if (Array.isArray(savedBooks) && savedBooks.length > 0) {
+          setBooks(savedBooks);
+        }
+      } catch {}
+    }
+    loadSavedBooks();
   }, []);
 
   function handleFormChange(key: string, val: string) {
@@ -611,8 +633,12 @@ export default function App() {
         pages.push('PDF icerik cikartilamadi. Lutfen farkli bir dosya deneyin.');
       }
 
-      const newBook = { id: 'user_' + Date.now(), title: asset.name.replace('.pdf', ''), color: '#C9A96E', pages };
-      setBooks(prev => [newBook, ...prev]);
+      const newBook = { id: 'user_' + Date.now(), title: asset.name.replace('.pdf', ''), color: '#C9A96E', pages, createdAt: new Date().toISOString(), source: 'pdf' };
+      setBooks(prev => {
+        const nextBooks = [newBook, ...prev];
+        saveBooks(nextBooks);
+        return nextBooks;
+      });
       setActiveBook(newBook);
       setCurrentPage(0);
       setTab('reader');
@@ -762,6 +788,7 @@ export default function App() {
         {pdfLoading ? (
           <>
             <Text style={{ fontFamily: 'Georgia', fontSize: 16, color: C.primary, fontWeight: '700', marginBottom: 6 }}>Yükleniyor... %{pdfProgress}</Text>
+            <Text style={{ fontSize: 12, color: C.textMuted, textAlign: 'center', lineHeight: 18, marginBottom: 12 }}>Bu işlem 1-2 dakika sürebilir. PDF yapay zekâ ile okunuyor, lütfen bekleyin.</Text>
             <View style={{ width: '100%', height: 4, backgroundColor: C.border, borderRadius: 2 }}>
               <View style={{ width: pdfProgress + '%' as any, height: 4, backgroundColor: C.primary, borderRadius: 2 }} />
             </View>
