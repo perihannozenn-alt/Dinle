@@ -537,7 +537,6 @@ export default function App() {
           <View style={{ alignItems: 'center', marginBottom: 34 }}>
             <Image source={LOGO} style={s.logoMark} />
             <Text style={{ fontFamily: 'Georgia', fontSize: 32, color: C.text, fontWeight: '700', marginTop: 18 }}>Dinle</Text>
-            <Text style={{ fontSize: 18, color: C.text, marginTop: 12, textAlign: 'center', fontWeight: '600' }}>Belgelerini doğal sesle dinle</Text>
             <Text style={{ fontSize: 14, color: C.textMuted, marginTop: 10, textAlign: 'center', lineHeight: 22 }}>PDF'lerini konuşan hikâyelere dönüştür. Uyurken, yürürken, dinlerken kaldığın yerden devam et.</Text>
           </View>
           <TouchableOpacity style={s.btn} onPress={() => setScreen('register')}>
