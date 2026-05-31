@@ -30,6 +30,10 @@ const LOGO = require('./assets/dinle-logo.jpeg');
 const SPLASH_VIDEO = require('./assets/logo-animasyonu.mp4');
 const DISCOVER_COCUK = require('./assets/discover-cocuk.png');
 const DISCOVER_ROMAN = require('./assets/discover-roman.png');
+const DISCOVER_FANTASTIK = require('./assets/discover-fantastik.png');
+const DISCOVER_PSIKOLOJI = require('./assets/discover-psikoloji.png');
+const DISCOVER_KISISEL_GELISIM = require('./assets/discover-kisisel-gelisim.png');
+const DISCOVER_BILIM_TARIH = require('./assets/discover-bilim-tarih.png');
 const BOOKS_STORAGE_PATH = (FileSystem.documentDirectory || '') + 'dinle-books.json';
 const LOGIN_PREFS_PATH = (FileSystem.documentDirectory || '') + 'dinle-login-prefs.json';
 const ADMOB_REWARDED_AD_UNIT_ID = 'ca-app-pub-8615121220645496/6277529119';
@@ -83,6 +87,7 @@ const DISCOVER_COLLECTIONS = [
     platform: 'Trendyol',
     action: 'Trendyol’da aç',
     emoji: '🌌',
+    image: DISCOVER_FANTASTIK,
     desc: 'Başka dünyalara, uzak zamanlara ve hayal gücüne açılan kitaplar.',
     url: 'https://www.trendyol.com/koleksiyonlar/fantastik-bilim-kurgu-trendyol-link-k-93a26678-d492-4e8b-b299-19b3734448d9',
   },
@@ -92,6 +97,7 @@ const DISCOVER_COLLECTIONS = [
     platform: 'Hepsiburada',
     action: 'Hepsiburada’da aç',
     emoji: '🧠',
+    image: DISCOVER_PSIKOLOJI,
     desc: 'İç dünyayı, ilişkileri ve insan davranışlarını anlamaya yardımcı kitaplar.',
     url: 'https://app.hb.biz/HdPY03NQjRVi',
   },
@@ -101,6 +107,7 @@ const DISCOVER_COLLECTIONS = [
     platform: 'Hepsiburada',
     action: 'Hepsiburada’da aç',
     emoji: '⚡',
+    image: DISCOVER_KISISEL_GELISIM,
     desc: 'Alışkanlık, odak, üretkenlik ve yaşam kalitesi üzerine seçkiler.',
     url: 'https://app.hb.biz/jS7VDZOfA1PX',
   },
@@ -110,6 +117,7 @@ const DISCOVER_COLLECTIONS = [
     platform: 'Hepsiburada',
     action: 'Hepsiburada’da aç',
     emoji: '🧬',
+    image: DISCOVER_BILIM_TARIH,
     desc: 'Merak edenler için tarih, kültür, bilim ve bilgi kitapları.',
     url: 'https://app.hb.biz/lRGSlyjCXhrq',
   },
