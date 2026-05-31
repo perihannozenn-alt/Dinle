@@ -54,89 +54,68 @@ const SLEEP = [
 
 const ytThumb = (id: string) => `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
 
-// Keşfet sayfası kitapları
-const DISCOVER_BOOKS = [
+const DISCOVER_COLLECTIONS = [
   {
-    id: 'd1',
-    title: 'Suç ve Ceza',
-    author: 'Fyodor Dostoyevski',
-    category: 'Roman',
-    emoji: '📚',
+    id: 'kids',
+    title: 'Çocuk Kitapları',
+    platform: 'Trendyol',
+    action: 'Trendyol’da aç',
+    emoji: '🧸',
     color: '#C9A96E',
-    price: '89,90 ₺',
-    store: 'Kitapyurdu',
-    url: 'https://www.kitapyurdu.com',
-    desc: 'Rus edebiyatının başyapıtı',
-    imageUrl: 'https://covers.openlibrary.org/b/id/8231856-L.jpg',
+    desc: 'Uyku öncesi, masal ve ilk okuma için sıcak kitap önerileri.',
+    url: 'https://www.trendyol.com/koleksiyonlar/cocuk-kitaplari-trendyol-link-k-55d85ed1-93e1-495d-af58-cd298f878905',
   },
   {
-    id: 'd2',
-    title: 'Küçük Prens',
-    author: 'Antoine de Saint-Exupéry',
-    category: 'Çocuk',
-    emoji: '🌹',
-    color: '#F46A8E',
-    price: '45,00 ₺',
-    store: 'D&R',
-    url: 'https://www.dr.com.tr',
-    desc: 'Tüm zamanların en çok okunan kitabı',
-    imageUrl: 'https://covers.openlibrary.org/b/id/7892359-L.jpg',
+    id: 'novel',
+    title: 'Roman & Hikaye',
+    platform: 'Trendyol',
+    action: 'Trendyol’da aç',
+    emoji: '📖',
+    color: '#D8B4FE',
+    desc: 'Dinlerken içine çekilecek edebi seçkiler ve güçlü hikayeler.',
+    url: 'https://www.trendyol.com/koleksiyonlar/roman-hikaye-trendyol-link-k-d29a5d84-425b-4ccf-8269-2b8afd56a1db',
   },
   {
-    id: 'd3',
-    title: 'Sapiens',
-    author: 'Yuval Noah Harari',
-    category: 'Tarih',
-    emoji: '🧬',
-    color: '#6A9CF4',
-    price: '120,00 ₺',
-    store: 'İdefix',
-    url: 'https://www.idefix.com',
-    desc: 'İnsanlığın kısa tarihi',
-    imageUrl: 'https://covers.openlibrary.org/b/id/8370221-L.jpg',
+    id: 'fantasy',
+    title: 'Fantastik & Bilim Kurgu',
+    platform: 'Trendyol',
+    action: 'Trendyol’da aç',
+    emoji: '🌌',
+    color: '#6AB4F4',
+    desc: 'Başka dünyalara, uzak zamanlara ve hayal gücüne açılan kitaplar.',
+    url: 'https://www.trendyol.com/koleksiyonlar/fantastik-bilim-kurgu-trendyol-link-k-93a26678-d492-4e8b-b299-19b3734448d9',
   },
   {
-    id: 'd4',
-    title: 'Dune',
-    author: 'Frank Herbert',
-    category: 'Bilim Kurgu',
-    emoji: '🏜️',
-    color: '#8EF46A',
-    price: '95,00 ₺',
-    store: 'Bkmkitap',
-    url: 'https://www.bkmkitap.com',
-    desc: 'Tüm zamanların en iyi bilim kurgu romanı',
-    imageUrl: 'https://covers.openlibrary.org/b/id/9329962-L.jpg',
-  },
-  {
-    id: 'd5',
-    title: 'Atomik Alışkanlıklar',
-    author: 'James Clear',
-    category: 'Kişisel Gelişim',
-    emoji: '⚡',
-    color: '#D46AF4',
-    price: '85,00 ₺',
-    store: 'Kitapyurdu',
-    url: 'https://www.kitapyurdu.com',
-    desc: 'Küçük değişiklikler büyük sonuçlar doğurur',
-    imageUrl: 'https://covers.openlibrary.org/b/isbn/9780735211292-L.jpg',
-  },
-  {
-    id: 'd6',
-    title: 'Sherlock Holmes',
-    author: 'Arthur Conan Doyle',
-    category: 'Polisiye',
-    emoji: '🔍',
+    id: 'psychology',
+    title: 'Psikoloji',
+    platform: 'Hepsiburada',
+    action: 'Hepsiburada’da aç',
+    emoji: '🧠',
     color: '#F4A56A',
-    price: '75,00 ₺',
-    store: 'D&R',
-    url: 'https://www.dr.com.tr',
-    desc: 'Efsanevi dedektifin maceraları',
-    imageUrl: 'https://covers.openlibrary.org/b/id/8318158-L.jpg',
+    desc: 'İç dünyayı, ilişkileri ve insan davranışlarını anlamaya yardımcı kitaplar.',
+    url: 'https://app.hb.biz/HdPY03NQjRVi',
+  },
+  {
+    id: 'self',
+    title: 'Kişisel Gelişim',
+    platform: 'Hepsiburada',
+    action: 'Hepsiburada’da aç',
+    emoji: '⚡',
+    color: '#8EF46A',
+    desc: 'Alışkanlık, odak, üretkenlik ve yaşam kalitesi üzerine seçkiler.',
+    url: 'https://app.hb.biz/jS7VDZOfA1PX',
+  },
+  {
+    id: 'science',
+    title: 'Bilim & Tarih',
+    platform: 'Hepsiburada',
+    action: 'Hepsiburada’da aç',
+    emoji: '🧬',
+    color: '#F4C46A',
+    desc: 'Merak edenler için tarih, kültür, bilim ve bilgi kitapları.',
+    url: 'https://app.hb.biz/lRGSlyjCXhrq',
   },
 ];
-
-const CATEGORIES = ['Tümü', 'Roman', 'Çocuk', 'Tarih', 'Bilim Kurgu', 'Kişisel Gelişim', 'Polisiye'];
 
 const DEMO_BOOKS: any[] = [];
 
@@ -255,7 +234,6 @@ export default function App() {
   const [showTones, setShowTones] = useState(false);
   const [showYT, setShowYT] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('Tümü');
   const [pdfProgress, setPdfProgress] = useState(0);
   const [summaryText, setSummaryText] = useState('');
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -886,69 +864,43 @@ export default function App() {
 
   
 
-  const DiscoverTab = () => {
-    const filtered = selectedCategory === 'Tümü'
-      ? DISCOVER_BOOKS
-      : DISCOVER_BOOKS.filter(b => b.category === selectedCategory);
+  const DiscoverTab = () => (
+    <ScrollView contentContainerStyle={s.listContent}>
+      <View style={{ marginBottom: 16, marginTop: 8 }}>
+        <Text style={{ fontFamily: 'Georgia', fontSize: 22, color: C.text, fontWeight: '700' }}>Keşfet</Text>
+        <Text style={{ fontSize: 13, color: C.textMuted, marginTop: 4 }}>Ruh haline göre kitap seçkileri</Text>
+      </View>
 
-    return (
-      <ScrollView contentContainerStyle={s.listContent}>
-        <View style={{ marginBottom: 16, marginTop: 8 }}>
-          <Text style={{ fontFamily: 'Georgia', fontSize: 22, color: C.text, fontWeight: '700' }}>Keşfet</Text>
-          <Text style={{ fontSize: 13, color: C.textMuted, marginTop: 4 }}>Beğenebileceğin kitaplar</Text>
-        </View>
-
-        {/* Kategori filtresi */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-          <View style={{ flexDirection: 'row', gap: 8, paddingRight: 16 }}>
-            {CATEGORIES.map(cat => (
-              <TouchableOpacity
-                key={cat}
-                style={{
-                  paddingHorizontal: 14, paddingVertical: 7,
-                  borderRadius: 20, borderWidth: 1,
-                  borderColor: selectedCategory === cat ? C.primary : C.border,
-                  backgroundColor: selectedCategory === cat ? C.primary + '22' : C.surface,
-                }}
-                onPress={() => setSelectedCategory(cat)}
-              >
-                <Text style={{ fontSize: 12, color: selectedCategory === cat ? C.primary : C.textMuted, fontWeight: '600' }}>{cat}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-
-        {/* Kitap listesi */}
-        {filtered.map(book => (
+      <View style={s.collectionGrid}>
+        {DISCOVER_COLLECTIONS.map(item => (
           <TouchableOpacity
-            key={book.id}
-            style={[s.bookCard, { borderLeftColor: book.color }]}
-            onPress={() => Linking.openURL(book.url)}
+            key={item.id}
+            style={[s.collectionCard, { borderColor: item.color + '88' }]}
+            onPress={() => Linking.openURL(item.url)}
+            activeOpacity={0.86}
           >
-            <Image source={{ uri: book.imageUrl }} style={s.discoverCover} />
+            <View style={[s.collectionArt, { backgroundColor: item.color + '24' }]}>
+              <Text style={{ fontSize: 34 }}>{item.emoji}</Text>
+            </View>
             <View style={{ flex: 1 }}>
-              <Text style={s.bookTitle}>{book.title}</Text>
-              <Text style={{ fontSize: 12, color: C.textSub, marginBottom: 2 }}>{book.author}</Text>
-              <Text style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>{book.desc}</Text>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 13, color: C.primary, fontWeight: '700' }}>{book.price}</Text>
-                <View style={{ backgroundColor: C.surface, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1, borderColor: C.border }}>
-                  <Text style={{ fontSize: 11, color: C.textMuted }}>{book.store}</Text>
-                </View>
+              <Text style={s.collectionTitle}>{item.title}</Text>
+              <Text style={s.collectionDesc}>{item.desc}</Text>
+              <View style={s.collectionFooter}>
+                <Text style={[s.collectionAction, { color: item.color }]}>{item.action}</Text>
+                <Text style={{ color: C.textMuted, fontSize: 18 }}>›</Text>
               </View>
             </View>
-            <Text style={{ color: C.textMuted, fontSize: 18, marginLeft: 8 }}>›</Text>
           </TouchableOpacity>
         ))}
+      </View>
 
-        <View style={{ padding: 16, backgroundColor: C.surface, borderRadius: 12, marginTop: 8 }}>
-        <Text style={{ fontSize: 12, color: C.textMuted, textAlign: 'center' }}>
-  {"Bazı bağlantılar affiliate iş ortaklığı içerebilir.\nSatın alımlar uygulamayı desteklememize yardımcı olabilir."}
-</Text>
-        </View>
-      </ScrollView>
-    );
-  };
+      <View style={s.affiliateNote}>
+        <Text style={{ fontSize: 12, color: C.textMuted, textAlign: 'center', lineHeight: 18 }}>
+          {"Bazı bağlantılar iş ortaklığı/affiliate bağlantısı içerebilir.\nSatın alımlar uygulamayı desteklememize yardımcı olabilir."}
+        </Text>
+      </View>
+    </ScrollView>
+  );
 
   const SleepTab = () => (
     <ScrollView contentContainerStyle={s.listContent}>
@@ -1088,7 +1040,14 @@ const s = StyleSheet.create({
   usageHint: { marginTop: 10, color: C.textMuted, fontSize: 12, lineHeight: 18 },
   bookCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: C.surface, borderRadius: 14, padding: 14, marginBottom: 10, borderLeftWidth: 4 },
   bookCover: { width: 52, height: 52, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  discoverCover: { width: 58, height: 82, borderRadius: 8, backgroundColor: C.elevated },
+  collectionGrid: { gap: 12 },
+  collectionCard: { minHeight: 142, flexDirection: 'row', gap: 14, backgroundColor: C.surface, borderRadius: 14, padding: 14, borderWidth: 1.5 },
+  collectionArt: { width: 76, height: '100%', minHeight: 112, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  collectionTitle: { fontFamily: 'Georgia', fontSize: 17, color: C.text, fontWeight: '700', marginBottom: 6 },
+  collectionDesc: { fontSize: 12, color: C.textSub, lineHeight: 18, marginBottom: 12 },
+  collectionFooter: { marginTop: 'auto', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  collectionAction: { fontSize: 12, fontWeight: '800' },
+  affiliateNote: { padding: 16, backgroundColor: C.surface, borderRadius: 12, marginTop: 14, borderWidth: 1, borderColor: C.border },
   bookTitle: { fontFamily: 'Georgia', fontSize: 15, color: C.text, fontWeight: '600', marginBottom: 3 },
   bookMeta: { fontSize: 12, color: C.textMuted, marginBottom: 6 },
   progressBar: { height: 3, backgroundColor: C.border, borderRadius: 2, overflow: 'hidden' },
