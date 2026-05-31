@@ -18,6 +18,7 @@ const monthlyLimits = {
   pdfUploads: 3,
   summaries: 3,
   rewardedPages: 3,
+  rewardedAdsPerPage: 2,
   rewardedTtsCharsPerPage: 1600,
 };
 
@@ -137,18 +138,33 @@ app.post('/grant-reward', requireUser, async (req, res) => {
       const snap = await transaction.get(usageRef);
       const usage = snap.exists ? snap.data() : {};
       const rewardedPages = Number(usage.rewardedPages || 0);
+      const pendingRewardAds = Number(usage.pendingRewardAds || 0);
       if (rewardedPages >= monthlyLimits.rewardedPages) {
         const error = new Error('Bu ay alınabilecek ödüllü ek hak sınırına ulaştın.');
         error.statusCode = 429;
         throw error;
       }
-      transaction.set(usageRef, {
-        rewardedPages: rewardedPages + 1,
-        rewardedTtsChars: Number(usage.rewardedTtsChars || 0) + monthlyLimits.rewardedTtsCharsPerPage,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      }, { merge: true });
+      const nextPendingRewardAds = pendingRewardAds + 1;
+      const shouldGrant = nextPendingRewardAds >= monthlyLimits.rewardedAdsPerPage;
+      const nextRewardedPages = rewardedPages + (shouldGrant ? 1 : 0);
+      transaction.set(
+        usageRef,
+        {
+          pendingRewardAds: shouldGrant ? 0 : nextPendingRewardAds,
+          rewardedPages: nextRewardedPages,
+          rewardedTtsChars: Number(usage.rewardedTtsChars || 0) + (shouldGrant ? monthlyLimits.rewardedTtsCharsPerPage : 0),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+      req.rewardResult = {
+        granted: shouldGrant,
+        adViews: shouldGrant ? monthlyLimits.rewardedAdsPerPage : nextPendingRewardAds,
+        requiredAdViews: monthlyLimits.rewardedAdsPerPage,
+        extraPages: shouldGrant ? 1 : 0,
+      };
     });
-    res.json({ ok: true, extraPages: 1 });
+    res.json({ ok: true, ...req.rewardResult });
   } catch (error) {
     handleApiError(res, error, 'Ek hak tanımlanamadı.');
   }

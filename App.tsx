@@ -259,6 +259,7 @@ export default function App() {
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [rewardPages, setRewardPages] = useState(0);
+  const [rewardAdProgress, setRewardAdProgress] = useState(0);
   const audioRef = useRef<any>(null);
 
   const FREE_LIMIT = 5;
@@ -374,7 +375,7 @@ export default function App() {
     if (pageCount >= FREE_LIMIT + rewardPages) {
       Alert.alert(
         'Deneme Hakkı Doldu',
-        'Bu ay ücretsiz seslendirme hakkın doldu. İstersen 1 ek sayfa için ödüllü reklam izleyebilirsin.',
+        'Bu ay ücretsiz seslendirme hakkın doldu. 1 ek sayfa kazanmak için 2 ödüllü reklam izleyebilirsin.',
         [{ text: 'Tamam', style: 'cancel' }, { text: 'Reklam İzle', onPress: showRewardedAd }]
       );
       return false;
@@ -394,9 +395,17 @@ export default function App() {
       }));
       cleanup.push(rewarded.addAdEventListener(ads.RewardedAdEventType.EARNED_REWARD, async () => {
         try {
-          await apiPost('/grant-reward', { reward: 'tts_page' });
-          setRewardPages(p => p + 1);
-          Alert.alert('Ek Hak Kazandın', '1 ek sayfa seslendirme hakkı eklendi.');
+          const data = await apiPost('/grant-reward', { reward: 'tts_page' });
+          const progress = Number(data.adViews || 0);
+          const required = Number(data.requiredAdViews || 2);
+          setRewardAdProgress(progress % required);
+          if (data.granted) {
+            setRewardPages(p => p + 1);
+            setRewardAdProgress(0);
+            Alert.alert('Ek Hak Kazandın', '2 reklam tamamlandı. 1 ek sayfa seslendirme hakkı eklendi.');
+          } else {
+            Alert.alert('1 Reklam Tamamlandı', `${required - progress} reklam daha izlediğinde 1 ek sayfa hakkı kazanacaksın.`);
+          }
         } catch (err: any) {
           Alert.alert('Ek Hak Eklenemedi', err.message || 'Reklam izlendi ama ek hak tanımlanamadı. Lütfen tekrar dene.');
         }
@@ -411,7 +420,8 @@ export default function App() {
 
       rewarded.load();
     } catch {
-      Alert.alert('Reklam Testi İçin Hazırlık Gerekli', 'Ödüllü reklamlar Expo Go içinde çalışmaz. Bunun için AdMob paketini kurup development build almamız gerekiyor.');
+      const remaining = rewardAdProgress === 1 ? '1 reklam daha gerekiyor.' : '2 reklam gerekiyor.';
+      Alert.alert('Reklam Testi İçin Hazırlık Gerekli', `Ödüllü reklamlar Expo Go içinde çalışmaz. Bunun için AdMob paketini kurup development build almamız gerekiyor. Ek sayfa için ${remaining}`);
     }
   }
 
