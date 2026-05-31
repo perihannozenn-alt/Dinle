@@ -28,6 +28,8 @@ const db = getFirestore(firebaseApp);
 const API_BASE_URL = 'https://dinle-api.onrender.com';
 const LOGO = require('./assets/dinle-logo.jpeg');
 const SPLASH_VIDEO = require('./assets/logo-animasyonu.mp4');
+const DISCOVER_COCUK = require('./assets/discover-cocuk.png');
+const DISCOVER_ROMAN = require('./assets/discover-roman.png');
 const BOOKS_STORAGE_PATH = (FileSystem.documentDirectory || '') + 'dinle-books.json';
 const LOGIN_PREFS_PATH = (FileSystem.documentDirectory || '') + 'dinle-login-prefs.json';
 const ADMOB_REWARDED_AD_UNIT_ID = 'ca-app-pub-8615121220645496/6277529119';
@@ -61,7 +63,7 @@ const DISCOVER_COLLECTIONS = [
     platform: 'Trendyol',
     action: 'Trendyol’da aç',
     emoji: '🧸',
-    color: '#C9A96E',
+    image: DISCOVER_COCUK,
     desc: 'Uyku öncesi, masal ve ilk okuma için sıcak kitap önerileri.',
     url: 'https://www.trendyol.com/koleksiyonlar/cocuk-kitaplari-trendyol-link-k-55d85ed1-93e1-495d-af58-cd298f878905',
   },
@@ -71,7 +73,7 @@ const DISCOVER_COLLECTIONS = [
     platform: 'Trendyol',
     action: 'Trendyol’da aç',
     emoji: '📖',
-    color: '#D8B4FE',
+    image: DISCOVER_ROMAN,
     desc: 'Dinlerken içine çekilecek edebi seçkiler ve güçlü hikayeler.',
     url: 'https://www.trendyol.com/koleksiyonlar/roman-hikaye-trendyol-link-k-d29a5d84-425b-4ccf-8269-2b8afd56a1db',
   },
@@ -81,7 +83,6 @@ const DISCOVER_COLLECTIONS = [
     platform: 'Trendyol',
     action: 'Trendyol’da aç',
     emoji: '🌌',
-    color: '#6AB4F4',
     desc: 'Başka dünyalara, uzak zamanlara ve hayal gücüne açılan kitaplar.',
     url: 'https://www.trendyol.com/koleksiyonlar/fantastik-bilim-kurgu-trendyol-link-k-93a26678-d492-4e8b-b299-19b3734448d9',
   },
@@ -91,7 +92,6 @@ const DISCOVER_COLLECTIONS = [
     platform: 'Hepsiburada',
     action: 'Hepsiburada’da aç',
     emoji: '🧠',
-    color: '#F4A56A',
     desc: 'İç dünyayı, ilişkileri ve insan davranışlarını anlamaya yardımcı kitaplar.',
     url: 'https://app.hb.biz/HdPY03NQjRVi',
   },
@@ -101,7 +101,6 @@ const DISCOVER_COLLECTIONS = [
     platform: 'Hepsiburada',
     action: 'Hepsiburada’da aç',
     emoji: '⚡',
-    color: '#8EF46A',
     desc: 'Alışkanlık, odak, üretkenlik ve yaşam kalitesi üzerine seçkiler.',
     url: 'https://app.hb.biz/jS7VDZOfA1PX',
   },
@@ -111,7 +110,6 @@ const DISCOVER_COLLECTIONS = [
     platform: 'Hepsiburada',
     action: 'Hepsiburada’da aç',
     emoji: '🧬',
-    color: '#F4C46A',
     desc: 'Merak edenler için tarih, kültür, bilim ve bilgi kitapları.',
     url: 'https://app.hb.biz/lRGSlyjCXhrq',
   },
@@ -875,18 +873,22 @@ export default function App() {
         {DISCOVER_COLLECTIONS.map(item => (
           <TouchableOpacity
             key={item.id}
-            style={[s.collectionCard, { borderColor: item.color + '88' }]}
+            style={s.collectionCard}
             onPress={() => Linking.openURL(item.url)}
             activeOpacity={0.86}
           >
-            <View style={[s.collectionArt, { backgroundColor: item.color + '24' }]}>
-              <Text style={{ fontSize: 34 }}>{item.emoji}</Text>
+            <View style={s.collectionArt}>
+              {item.image ? (
+                <Image source={item.image} style={s.collectionImage} />
+              ) : (
+                <Text style={{ fontSize: 34 }}>{item.emoji}</Text>
+              )}
             </View>
             <View style={{ flex: 1 }}>
               <Text style={s.collectionTitle}>{item.title}</Text>
               <Text style={s.collectionDesc}>{item.desc}</Text>
               <View style={s.collectionFooter}>
-                <Text style={[s.collectionAction, { color: item.color }]}>{item.action}</Text>
+                <Text style={s.collectionAction}>{item.action}</Text>
                 <Text style={{ color: C.textMuted, fontSize: 18 }}>›</Text>
               </View>
             </View>
@@ -1041,12 +1043,13 @@ const s = StyleSheet.create({
   bookCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: C.surface, borderRadius: 14, padding: 14, marginBottom: 10, borderLeftWidth: 4 },
   bookCover: { width: 52, height: 52, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   collectionGrid: { gap: 12 },
-  collectionCard: { minHeight: 142, flexDirection: 'row', gap: 14, backgroundColor: C.surface, borderRadius: 14, padding: 14, borderWidth: 1.5 },
-  collectionArt: { width: 76, height: '100%', minHeight: 112, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  collectionCard: { minHeight: 142, flexDirection: 'row', gap: 14, backgroundColor: C.surface, borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: C.primary + '66' },
+  collectionArt: { width: 76, height: '100%', minHeight: 112, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: C.primary + '18', overflow: 'hidden' },
+  collectionImage: { width: '100%', height: '100%' },
   collectionTitle: { fontFamily: 'Georgia', fontSize: 17, color: C.text, fontWeight: '700', marginBottom: 6 },
   collectionDesc: { fontSize: 12, color: C.textSub, lineHeight: 18, marginBottom: 12 },
   collectionFooter: { marginTop: 'auto', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  collectionAction: { fontSize: 12, fontWeight: '800' },
+  collectionAction: { fontSize: 12, fontWeight: '800', color: C.primary },
   affiliateNote: { padding: 16, backgroundColor: C.surface, borderRadius: 12, marginTop: 14, borderWidth: 1, borderColor: C.border },
   bookTitle: { fontFamily: 'Georgia', fontSize: 15, color: C.text, fontWeight: '600', marginBottom: 3 },
   bookMeta: { fontSize: 12, color: C.textMuted, marginBottom: 6 },
