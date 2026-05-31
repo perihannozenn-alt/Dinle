@@ -14,6 +14,7 @@ const allowedVoiceIds = new Set([
 ]);
 
 const monthlyLimits = {
+  freeTtsPages: 5,
   ttsChars: 8500,
   pdfUploads: 3,
   summaries: 3,
@@ -128,6 +129,49 @@ function handleApiError(res, error, fallbackMessage) {
 
 app.get('/health', (_req, res) => {
   res.json({ ok: true });
+});
+
+app.get('/usage', requireUser, async (req, res) => {
+  try {
+    const db = admin.firestore();
+    const month = currentUsageMonth();
+    const usageRef = db.collection('users').doc(req.user.uid).collection('usage').doc(month);
+    const snap = await usageRef.get();
+    const usage = snap.exists ? snap.data() : {};
+    const ttsChars = Number(usage.ttsChars || 0);
+    const rewardedPages = Number(usage.rewardedPages || 0);
+    const pendingRewardAds = Number(usage.pendingRewardAds || 0);
+    const ttsPagesUsed = Math.ceil(ttsChars / monthlyLimits.rewardedTtsCharsPerPage);
+    const totalTtsPages = monthlyLimits.freeTtsPages + rewardedPages;
+
+    res.json({
+      ok: true,
+      month,
+      limits: {
+        ttsPages: monthlyLimits.freeTtsPages,
+        pdfUploads: monthlyLimits.pdfUploads,
+        summaries: monthlyLimits.summaries,
+        rewardedPages: monthlyLimits.rewardedPages,
+        rewardedAdsPerPage: monthlyLimits.rewardedAdsPerPage,
+      },
+      usage: {
+        ttsChars,
+        ttsPagesUsed,
+        pdfUploads: Number(usage.pdfUploads || 0),
+        summaries: Number(usage.summaries || 0),
+        rewardedPages,
+        pendingRewardAds,
+      },
+      remaining: {
+        ttsPages: Math.max(0, totalTtsPages - ttsPagesUsed),
+        pdfUploads: Math.max(0, monthlyLimits.pdfUploads - Number(usage.pdfUploads || 0)),
+        summaries: Math.max(0, monthlyLimits.summaries - Number(usage.summaries || 0)),
+        rewardedPages: Math.max(0, monthlyLimits.rewardedPages - rewardedPages),
+      },
+    });
+  } catch (error) {
+    handleApiError(res, error, 'Kullanım hakları alınamadı.');
+  }
 });
 
 app.post('/grant-reward', requireUser, async (req, res) => {

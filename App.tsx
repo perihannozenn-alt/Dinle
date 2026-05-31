@@ -29,6 +29,7 @@ const API_BASE_URL = 'https://dinle-api.onrender.com';
 const LOGO = require('./assets/dinle-logo.jpeg');
 const SPLASH_VIDEO = require('./assets/logo-animasyonu.mp4');
 const BOOKS_STORAGE_PATH = (FileSystem.documentDirectory || '') + 'dinle-books.json';
+const LOGIN_PREFS_PATH = (FileSystem.documentDirectory || '') + 'dinle-login-prefs.json';
 const ADMOB_REWARDED_AD_UNIT_ID = 'ca-app-pub-8615121220645496/6277529119';
 
 const C = {
@@ -219,6 +220,7 @@ export default function App() {
   const [tab, setTab] = useState('library');
   const [form, setForm] = useState({ ad: '', soyad: '', email: '', tel: '', password: '' });
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [rememberMe, setRememberMe] = useState(true);
   const [plan, setPlan] = useState<'free' | 'temel' | 'premium'>('free');
   const [authLoading, setAuthLoading] = useState(true);
   const [splashDone, setSplashDone] = useState(false);
@@ -260,6 +262,7 @@ export default function App() {
   const [showSummary, setShowSummary] = useState(false);
   const [rewardPages, setRewardPages] = useState(0);
   const [rewardAdProgress, setRewardAdProgress] = useState(0);
+  const [usageSummary, setUsageSummary] = useState<any>(null);
   const audioRef = useRef<any>(null);
 
   const FREE_LIMIT = 5;
@@ -295,6 +298,26 @@ export default function App() {
     }
     loadSavedBooks();
   }, []);
+
+  useEffect(() => {
+    async function loadLoginPrefs() {
+      try {
+        const info = await FileSystem.getInfoAsync(LOGIN_PREFS_PATH);
+        if (!info.exists) return;
+        const raw = await FileSystem.readAsStringAsync(LOGIN_PREFS_PATH);
+        const prefs = JSON.parse(raw);
+        setRememberMe(prefs.rememberMe !== false);
+        if (prefs.rememberMe && prefs.email) {
+          setLoginForm(prev => ({ ...prev, email: prefs.email }));
+        }
+      } catch {}
+    }
+    loadLoginPrefs();
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading && auth.currentUser) refreshUsage();
+  }, [authLoading]);
 
   function handleFormChange(key: string, val: string) {
     setForm(prev => ({ ...prev, [key]: val }));
@@ -348,6 +371,12 @@ export default function App() {
     }
     try {
       await signInWithEmailAndPassword(auth, loginForm.email, loginForm.password);
+      try {
+        await FileSystem.writeAsStringAsync(
+          LOGIN_PREFS_PATH,
+          JSON.stringify({ rememberMe, email: rememberMe ? loginForm.email : '' })
+        );
+      } catch {}
     } catch (err: any) {
       Alert.alert('Giriş Hatası', 'Email veya şifre yanlış.');
     }
@@ -368,6 +397,7 @@ export default function App() {
 
   async function handleLogout() {
     await signOut(auth);
+    setUsageSummary(null);
     setScreen('auth');
   }
 
@@ -402,8 +432,10 @@ export default function App() {
           if (data.granted) {
             setRewardPages(p => p + 1);
             setRewardAdProgress(0);
+            refreshUsage();
             Alert.alert('Ek Hak Kazandın', '2 reklam tamamlandı. 1 ek sayfa seslendirme hakkı eklendi.');
           } else {
+            refreshUsage();
             Alert.alert('1 Reklam Tamamlandı', `${required - progress} reklam daha izlediğinde 1 ek sayfa hakkı kazanacaksın.`);
           }
         } catch (err: any) {
@@ -452,6 +484,38 @@ export default function App() {
     }
   }
 
+  async function apiGet(path: string) {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error('Lütfen tekrar giriş yapın.');
+    try {
+      const response = await fetch(`${API_BASE_URL}${path}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const raw = await response.text();
+      let data: any = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        throw new Error('Sunucu geçici olarak beklenmeyen bir yanıt verdi. Lütfen birazdan tekrar deneyin.');
+      }
+      if (!response.ok) throw new Error(data.error || 'İşlem tamamlanamadı.');
+      return data;
+    } catch (err: any) {
+      if (err.message) throw err;
+      throw new Error('Bağlantı kurulamadı. İnternet bağlantını kontrol edip tekrar dene.');
+    }
+  }
+
+  async function refreshUsage() {
+    try {
+      const data = await apiGet('/usage');
+      setUsageSummary(data);
+      setRewardPages(Number(data?.usage?.rewardedPages || 0));
+      setRewardAdProgress(Number(data?.usage?.pendingRewardAds || 0));
+    } catch {}
+  }
+
   async function extractTextFromPDF(pdfBase64: string): Promise<string> {
     const data = await apiPost('/extract-pdf-text', { pdfBase64 });
     return data.text || '';
@@ -486,6 +550,7 @@ export default function App() {
       });
       await sound.playAsync();
       setIsSpeaking(true);
+      refreshUsage();
     } catch (err: any) {
       Alert.alert('Ses Hatası', err.message || 'Ses olusturulamadi.');
     } finally {
@@ -509,6 +574,7 @@ export default function App() {
       const text = activeBook.pages.join('\n\n').slice(0, 12000);
       const data = await apiPost('/summarize', { text, title: activeBook.title });
       setSummaryText(data.summary || 'Özet çıkarılamadı.');
+      refreshUsage();
     } catch (err: any) {
       setShowSummary(false);
       Alert.alert('Özet Hatası', err.message || 'Özet oluşturulamadı.');
@@ -554,6 +620,7 @@ export default function App() {
       setActiveBook(newBook);
       setCurrentPage(0);
       setTab('reader');
+      refreshUsage();
     } catch (err: any) {
       Alert.alert('Hata', 'PDF yüklenemedi: ' + err.message);
     } finally {
@@ -612,15 +679,23 @@ export default function App() {
 
             <Text style={{ color: C.textSub, fontSize: 13, fontWeight: '600', marginBottom: 6 }}>Sifre</Text>
             <TextInput
-              style={{ backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 14, color: C.text, fontSize: 15, marginBottom: 24 }}
+              style={{ backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 14, color: C.text, fontSize: 15, marginBottom: 14 }}
               placeholder="Şifrenizi girin" placeholderTextColor={C.textMuted}
               secureTextEntry
               value={loginForm.password} onChangeText={v => setLoginForm(prev => ({ ...prev, password: v }))}
             />
 
-            <TouchableOpacity style={{ alignSelf: 'flex-end', marginTop: -12, marginBottom: 8 }} onPress={handleForgotPassword}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <TouchableOpacity style={s.rememberRow} onPress={() => setRememberMe(v => !v)}>
+                <View style={[s.checkBox, rememberMe && { backgroundColor: C.primary, borderColor: C.primary }]}>
+                  {rememberMe && <Text style={{ color: C.bg, fontSize: 12, fontWeight: '800' }}>✓</Text>}
+                </View>
+                <Text style={{ color: C.textSub, fontSize: 13, fontWeight: '600' }}>Beni hatırla</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleForgotPassword}>
               <Text style={{ color: C.primary, fontSize: 13, fontWeight: '600' }}>Şifremi unuttum</Text>
             </TouchableOpacity>
+            </View>
 
             <TouchableOpacity style={s.btn} onPress={handleLogin}>
               <Text style={s.btnText}>Giriş Yap</Text>
@@ -683,6 +758,35 @@ export default function App() {
         <TouchableOpacity onPress={handleLogout} style={s.smallBtn}>
           <Text style={{ color: C.textSub, fontSize: 13, fontWeight: '600' }}>Çıkış</Text>
         </TouchableOpacity>
+      </View>
+      <View style={s.usageCard}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <View>
+            <Text style={s.usageTitle}>Bu ayki hakların</Text>
+            <Text style={s.usageSub}>Haklar her ay yenilenir</Text>
+          </View>
+          <TouchableOpacity onPress={refreshUsage} style={s.refreshBtn}>
+            <Text style={{ color: C.primary, fontSize: 12, fontWeight: '700' }}>Yenile</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={s.usageGrid}>
+          <View style={s.usageItem}>
+            <Text style={s.usageNumber}>{usageSummary?.remaining?.ttsPages ?? Math.max(0, FREE_LIMIT + rewardPages - pageCount)}</Text>
+            <Text style={s.usageLabel}>Ses sayfası</Text>
+          </View>
+          <View style={s.usageItem}>
+            <Text style={s.usageNumber}>{usageSummary?.remaining?.pdfUploads ?? 3}</Text>
+            <Text style={s.usageLabel}>PDF okuma</Text>
+          </View>
+          <View style={s.usageItem}>
+            <Text style={s.usageNumber}>{usageSummary?.remaining?.summaries ?? 3}</Text>
+            <Text style={s.usageLabel}>AI özet</Text>
+          </View>
+        </View>
+        <Text style={s.usageHint}>
+          Ek hak: {usageSummary?.usage?.rewardedPages ?? rewardPages}/3 sayfa
+          {(usageSummary?.usage?.pendingRewardAds ?? rewardAdProgress) > 0 ? ` · Reklam ilerleme: ${usageSummary?.usage?.pendingRewardAds ?? rewardAdProgress}/2` : ''}
+        </Text>
       </View>
       {books.map(book => (
         <TouchableOpacity key={book.id} style={[s.bookCard, { borderLeftColor: book.color }]} onPress={() => openBook(book)}>
@@ -971,6 +1075,17 @@ const s = StyleSheet.create({
   logoMark: { width: 142, height: 142, borderRadius: 32 },
   logoMarkSmall: { width: 86, height: 86, borderRadius: 22 },
   authLogoTitle: { fontSize: 34, color: C.primary, fontWeight: '800', marginTop: 18, letterSpacing: 0 },
+  rememberRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 },
+  checkBox: { width: 20, height: 20, borderRadius: 6, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center', backgroundColor: C.surface },
+  usageCard: { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 14, marginBottom: 14 },
+  usageTitle: { fontFamily: 'Georgia', fontSize: 16, color: C.text, fontWeight: '700', marginBottom: 3 },
+  usageSub: { fontSize: 12, color: C.textMuted },
+  refreshBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 9, backgroundColor: C.primary + '18', borderWidth: 1, borderColor: C.primary + '66' },
+  usageGrid: { flexDirection: 'row', gap: 8 },
+  usageItem: { flex: 1, backgroundColor: C.bg, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 8, alignItems: 'center', borderWidth: 1, borderColor: C.border },
+  usageNumber: { fontFamily: 'Georgia', fontSize: 22, color: C.primary, fontWeight: '700', marginBottom: 3 },
+  usageLabel: { fontSize: 11, color: C.textSub, textAlign: 'center', fontWeight: '600' },
+  usageHint: { marginTop: 10, color: C.textMuted, fontSize: 12, lineHeight: 18 },
   bookCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: C.surface, borderRadius: 14, padding: 14, marginBottom: 10, borderLeftWidth: 4 },
   bookCover: { width: 52, height: 52, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   discoverCover: { width: 58, height: 82, borderRadius: 8, backgroundColor: C.elevated },
